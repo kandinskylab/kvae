@@ -100,7 +100,7 @@ class PXSDownsample(nn.Module):
         )
         self.linear = nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1)
 
-    def forward(self, x):  # ToDo: add another version with true ps.
+    def forward(self, x):
         # x: (bchw)
         pxs_interm = self.unshuffle(x)
         b, c, h, w = pxs_interm.shape
