@@ -1,0 +1,21 @@
+ckpt_path: './weights/vae_3d.ckpt'
+
+common:
+  experiment_name: "vae_ch16_488"
+
+data:
+  input_norm: 'm11'
+  
+model:
+  encoder_params:
+    in_channels: 3
+    ch: 128
+    num_res_blocks: 2
+    z_channels: 16
+    temporal_compress_times: 4
+  decoder_params:
+    out_ch: 3
+    ch: 128
+    num_res_blocks: 2
+    z_channels: 16
+    temporal_compress_times: 4
