@@ -13,12 +13,12 @@ Download checkpoint to `./weights/vae_3d.ckpt`
 
 ## Test
 
-For simple test run 
+For simple test, run 
 ```sh
 python inference.py --frames 999
 ```
 
-to use optimized compiled encoder version run (max duration 257 frames):
+To use optimized compiled encoder version, run (max duration 257 frames):
 ```sh
 python inference.py --frames 257 --optim
 ```
