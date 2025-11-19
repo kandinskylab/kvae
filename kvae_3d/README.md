@@ -7,10 +7,6 @@ Install requirements:
 pip install -r requirements.txt
 ```
 
-## Weights
-
-Download checkpoint to `./weights/vae_3d.ckpt`
-
 ## Test
 
 For simple test, run 
