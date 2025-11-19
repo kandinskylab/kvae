@@ -9,8 +9,8 @@ from omegaconf import OmegaConf
 import torch
 torch._dynamo.config.cache_size_limit = 10000
 
-from model.cached_model import CachedCausalVAE
-from model.efficient_vae import KandinskyVAE
+from models.cached_model import CachedCausalVAE
+from models.efficient_vae import KandinskyVAE
 from utils.inference_utils import compute_psnr_range
 from utils.dataset_utils import make_png_tensor, make_video_tensor
 from utils.utils import save
@@ -82,20 +82,11 @@ def infer(video_path, model, out_dir, frames=17, input_norm='m11', resize_input=
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--device_id', type=int, default=0)
-    parser.add_argument('--cfg', type=str, default="configs/vae_ch16_488.yaml")
     parser.add_argument('--frames', type=int, default=257)
     parser.add_argument('--optim', action="store_true")
-    parser.add_argument('--ckpt', type=str, default="")
     args = parser.parse_args()
 
     MY_DIR = '.'
-
-    #-#-# ------- #-#-#
-    config = OmegaConf.load(args.cfg)
-    torch.hub.set_dir(config.common.get('torch_hub', './data/torch-cache/hub'))
-
-    ckpt_path = config.ckpt_path
-    print("Use checkpoint: %s" % ckpt_path)
 
     if torch.cuda.is_available():
         DTYPE = torch.bfloat16
@@ -106,15 +97,13 @@ if __name__ == '__main__':
 
 
     vae_class = KandinskyVAE if args.optim else CachedCausalVAE
-    vae = vae_class(config.model.encoder_params,
-                    config.model.decoder_params,
-                    ckpt_path=ckpt_path)
+    vae = vae_class.from_pretrained("kandinskylab/KVAE-3D-1.0")
 
     vae = vae.eval().to(DEVICE).to(DTYPE)
 
     date = datetime.datetime.now().strftime("%Y-%m-%d")
 
-    REC_DIR = os.path.join(MY_DIR, f'output/vae_recs/{config.common.experiment_name}/{date}')
+    REC_DIR = os.path.join(MY_DIR, f'output/vae_recs/{vae.config["common"]["experiment_name"]}/{date}')
 
     testset = ('test1', 'test2')
     
@@ -144,7 +133,7 @@ if __name__ == '__main__':
 
                 video_psnr, frames_psnr = infer(v_path, vae, rec_dir, 
                                frames=args.frames if args.frames != 999 else None, 
-                               divider=config.model.encoder_params.temporal_compress_times * 2)
+                               divider=vae.config["model"]["encoder_params"]["temporal_compress_times"] * 2)
 
                 if not frames_psnr.shape:
                     frames_psnr = frames_psnr.unsqueeze(0)

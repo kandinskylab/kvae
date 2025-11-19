@@ -13,11 +13,13 @@ import time
 from math import log2
 from typing import Union, Tuple
 
+import safetensors
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+from huggingface_hub import PyTorchModelHubMixin
 
 from .cached_enc_dec import CachedDecoder3D
 
@@ -424,57 +426,29 @@ class CausalConv3d(nn.Module):
         return output
 
 
-class KandinskyVAE(nn.Module):
-    def __init__(self, encoder_conf, decoder_conf, ckpt_path=None):
+class KandinskyVAE(nn.Module, 
+                   PyTorchModelHubMixin,
+                   library_name="KVAE 3D",
+                   tags=["vae"],
+                   repo_url="https://github.com/kandinskylab/kvae-1",):
+    def __init__(self, config):
         super().__init__()
-        self.encoder = KandinskyEncoder3D(**encoder_conf)
-        self.decoder = CachedDecoder3D(**decoder_conf)
-
-        if ckpt_path is not None:
-            self.init_from_ckpt(ckpt_path)
+        self.config = config
+        self.encoder = KandinskyEncoder3D(**config["model"]["encoder_params"])
+        self.decoder = CachedDecoder3D(**config["model"]["decoder_params"])
         
         self.encoder = self.encoder.to(memory_format=torch.channels_last_3d)
         self.model_size = sum(p.numel() for p in self.parameters()) * 2
 
-    def init_from_ckpt(self, path):
-        sd = torch.load(path, map_location="cpu")["state_dict"]
-
-        # Fix checkpoint if starting from new style
-        replace_keys = dict()
-        delete_keys = []
-        for k in sd:
-            if "loss" in k:
-                delete_keys.append(k)
-            
+    @classmethod
+    def _load_as_safetensor(cls, model, model_file: str, map_location: str, strict: bool):
+        state_dict = safetensors.torch.load_file(model_file, device=map_location)
+        for k in state_dict:
             if "encoder.conv_in.conv.weight" in k:
-                sd[k] = F.pad(sd[k], (0, 0, 0, 0, 0, 0, 0, 1))
-
-            if 'encoder.down' in k and 'downsample.temporal_conv.conv' in k:
-                continue
-
-            if k.startswith('decoder'):
-                if k.startswith('decoder.up.2.upsample') or k.startswith('decoder.up.3.upsample'):
-                    continue
-                elif '.conv_b.conv' in k:
-                    replace_keys[k] = k.replace('.conv_b.conv', '.conv_b')
-                    continue
-                elif '.conv_y.conv' in k:
-                    replace_keys[k] = k.replace('.conv_y.conv', '.conv_y')
-                    continue
-                
-            if k.endswith('sample.temporal_conv.conv.weight') or k.endswith('sample.temporal_conv.conv.bias'):
-                replace_keys[k] = k.replace(".temporal_conv.conv.", '.temporal_conv.')
-        for k in delete_keys:
-            del sd[k]
-            if k in replace_keys:
-                del replace_keys[k]
-        for old_k, new_k in replace_keys.items():
-            sd[new_k] = sd[old_k]
-            del sd[old_k]
-
-        self.load_state_dict(sd, strict=True)
-        print(f'Restored weights from {path}')
-
+                state_dict[k] = F.pad(state_dict[k], (0, 0, 0, 0, 0, 0, 0, 1))
+        model.load_state_dict(state_dict, strict=True)
+        return model
+    
     def make_empty_cache(self, block: str):
         def make_dict(name):
             if name == 'conv':

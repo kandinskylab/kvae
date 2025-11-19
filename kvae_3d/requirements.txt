@@ -1,0 +1,9 @@
+torch
+torchvision
+torchmetrics
+omegaconf
+tqdm
+einops
+av
+safetensors
+huggingface_hub

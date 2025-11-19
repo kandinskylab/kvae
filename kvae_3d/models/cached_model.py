@@ -1,51 +1,24 @@
 import math
 
 import torch
+from huggingface_hub import PyTorchModelHubMixin
 
 from .cached_enc_dec import CachedEncoder3D, CachedDecoder3D
 
 
-class CachedCausalVAE(torch.nn.Module):
-    def __init__(self, encoder_conf, decoder_conf, ckpt_path=None):
+class CachedCausalVAE(torch.nn.Module, 
+                      PyTorchModelHubMixin,
+                      library_name="KVAE 3D",
+                      tags=["vae"],
+                      repo_url="https://github.com/kandinskylab/kvae-1",
+                     ):
+    def __init__(self, config):
         super().__init__()
-        self.conf = {'enc' : encoder_conf,
-                     'dec' : decoder_conf}
-        self.encoder = CachedEncoder3D(**encoder_conf)
-        self.decoder = CachedDecoder3D(**decoder_conf)
-
-        if ckpt_path is not None:
-            self.init_from_ckpt(ckpt_path)
-
-    def init_from_ckpt(self, path):
-        sd = torch.load(path, map_location="cpu")["state_dict"]
-
-        # Fix checkpoint if starting from new style
-        replace_keys = dict()
-        for k in sd:
-            if 'encoder.down' in k and 'downsample.temporal_conv.conv' in k:
-                continue
-            if k.startswith('loss'):
-                replace_keys[k] = None
-
-            if k.startswith('decoder'):
-                if 'upsample' in k:
-                    continue
-                elif '.conv_b.conv' in k:
-                    replace_keys[k] = k.replace('.conv_b.conv', '.conv_b')
-                    continue
-                elif '.conv_y.conv' in k:
-                    replace_keys[k] = k.replace('.conv_y.conv', '.conv_y')
-                    continue
-                
-            if k.endswith('sample.temporal_conv.conv.weight') or k.endswith('sample.temporal_conv.conv.bias'):
-                replace_keys[k] = k.replace(".temporal_conv.conv.", '.temporal_conv.')
-        for old_k, new_k in replace_keys.items():
-            if new_k is not None:
-                sd[new_k] = sd[old_k]
-            del sd[old_k]
-
-        self.load_state_dict(sd, strict=True)
-        print(f'Restored weights from {path}')
+        self.config = config 
+        self.conf = {'enc' : config["model"]["encoder_params"],
+                     'dec' : config["model"]["decoder_params"]}
+        self.encoder = CachedEncoder3D(**config["model"]["encoder_params"])
+        self.decoder = CachedDecoder3D(**config["model"]["decoder_params"])
 
     def make_empty_cache(self, block: str):
         def make_dict(name, p=None):
@@ -80,7 +53,7 @@ class CachedCausalVAE(torch.nn.Module):
                  'norm_out' : make_dict(f'norm_{block}'),
                  'conv_out' : make_dict('conv')}
         for i in range(len(self.conf[block].get("ch_mult", [1, 2, 4, 8]))):
-            cache[i] = make_dict(f'{i}_block', p=self.conf[block].num_res_blocks+1)
+            cache[i] = make_dict(f'{i}_block', p=self.conf[block]["num_res_blocks"] + 1)
         return cache
 
     def encode(self, x, seg_len=16):
