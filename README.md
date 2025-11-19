@@ -1,22 +1,10 @@
-<div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/kvae-white.png">
-    <source media="(prefers-color-scheme: light)" srcset="assets/kvae-black.png">
-  </picture>
-</div>
+# KVAE 1.0
 <div align="center">
   <a href="https://habr.com/ru/companies/sberbank/articles/966450/">Habr</a> | <a href="https://kandinskylab.ai/">Project Page</a> | Technical Report (soon) | 🤗 <a href=https://huggingface.co/kandinskylab/KVAE-3D-1.0> KVAE-3D </a> / <a href=https://huggingface.co/kandinskylab/KVAE-2D-1.0> KVAE-2D </a> 
 </div>
 
 In this repository, we provide tokenizers for image and video diffusion models: 
-KVAE 2D and KVAE 3D respectively.
-
-## Setup
-
-Install requirements:
-```sh 
-pip install -r requirements.txt
-```
+KVAE 2D and KVAE 3D.
 
 ## KVAE 2D
 Evaluation results of KVAE 2D model on [Imagenet-256](https://huggingface.co/datasets/benjamin-paine/imagenet-1k-256x256)(valid) and [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/)(valid, high-resolution)
@@ -30,12 +18,8 @@ Evaluation results of KVAE 2D model on [Imagenet-256](https://huggingface.co/dat
 | DIV2K               | Flux    | 32.64     | 0.91     | 0.061     | -        |
 | DIV2K               | KVAE 2D | **33.67** | **0.92** | **0.060** | -        |
 
-<br>
 
-Simple example for 2d model inference is presented in `inference_2d.ipynb`
-
-
-## KVAE 3D inference
+## KVAE 3D
 Evaluation results of KVAE 3D model on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dataset/) dataset.
 
 | Model        | PSNR      | SSIM     | LPIPS     |
@@ -45,6 +29,19 @@ Evaluation results of KVAE 3D model on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dat
 | KVAE 3D      | **35.63** | **0.92** | **0.088** |
 
 
+## Inreference examples
+
+### Setup
+
+Install requirements:
+```sh 
+pip install -r requirements.txt
+```
+
+### KVAE 2D inference
+Simple example for 2d model inference is presented in `inference_2d.ipynb`
+
+### KVAE 3D inference
 For simple test, run
 ```sh
 python inference.py --frames 999
