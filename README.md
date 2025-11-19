@@ -80,6 +80,7 @@ For simple test, go to `kvae_3d` folder and run
 ```sh
 python inference.py --frames 999
 ```
+It will save reconstructions to `output` folder at repository root.
 
 To use optimized compiled encoder version, run (max duration 257 frames):
 ```sh
