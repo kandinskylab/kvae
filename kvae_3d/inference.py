@@ -77,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('--optim', action="store_true")
     args = parser.parse_args()
 
-    MY_DIR = '.'
+    DATA_ROOT = '..'
 
     if torch.cuda.is_available():
         DTYPE = torch.bfloat16
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     date = datetime.datetime.now().strftime("%Y-%m-%d")
 
-    REC_DIR = os.path.join(MY_DIR, f'output/vae_recs/{vae.config["common"]["experiment_name"]}/{date}')
+    rec_dir = os.path.join(DATA_ROOT, f'output/vae_recs/{vae.config["common"]["experiment_name"]}/{date}')
 
     testset = ('test1', 'test2')
     
@@ -103,24 +103,24 @@ if __name__ == '__main__':
     for subdir in testset:
         log_dict = defaultdict(list)
         try:
-            DATA_ROOT = os.path.join(MY_DIR, 'assets/%s' % subdir)
+            dataset_root = os.path.join(DATA_ROOT, 'assets/%s' % subdir)
     
             psnr_sum = 0
             psnr_tested = 0
 
-            data = sorted(os.listdir(DATA_ROOT))
+            data = sorted(os.listdir(dataset_root))
 
-            rec_dir = os.path.join(REC_DIR + '_fr%d%s' % (
+            dataset_rec_dir = os.path.join(rec_dir + '_fr%d%s' % (
                 args.frames, 
                 "_opt" if args.optim else '',
             ), subdir)
-            exists = glob.glob(rec_dir + '_*')
+            exists = glob.glob(dataset_rec_dir + '_*')
             if exists:
                 print("Already exists, skip ", exists)
                 continue
             for name in tqdm(data):
                 torch.cuda.empty_cache()
-                v_path = os.path.join(DATA_ROOT, name)
+                v_path = os.path.join(dataset_root, name)
 
                 video_psnr, frames_psnr = infer(v_path, vae, rec_dir, 
                                frames=args.frames if args.frames != 999 else None, 
