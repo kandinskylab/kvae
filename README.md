@@ -7,7 +7,7 @@ In this repository, we provide tokenizers for image and video diffusion models:
 KVAE 2D and KVAE 3D.
 
 KVAE 2D model has compression 8x8 and 16 latent channels.
-KVAE 3d model has time compression 4 and special compression 8x8 and 16 latent channels 
+KVAE 3d model has time compression 4 and spacial compression 8x8 and 16 latent channels 
 
 ## Evaluation results
 Evaluation results of KVAE 2D model on [Imagenet-256](https://huggingface.co/datasets/benjamin-paine/imagenet-1k-256x256)(valid) and [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/)(valid, high-resolution). All compared models perform 8x8 compression with 16 latent channels.
