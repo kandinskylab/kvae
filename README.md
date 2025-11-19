@@ -6,8 +6,11 @@
 In this repository, we provide tokenizers for image and video diffusion models: 
 KVAE 2D and KVAE 3D.
 
+KVAE 2D model has compression 8x8 and 16 latent channels.
+KVAE 3d model has time compression 4 and special compression 8x8 and 16 latent channels 
+
 ## Evaluation results
-Evaluation results of KVAE 2D model on [Imagenet-256](https://huggingface.co/datasets/benjamin-paine/imagenet-1k-256x256)(valid) and [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/)(valid, high-resolution)
+Evaluation results of KVAE 2D model on [Imagenet-256](https://huggingface.co/datasets/benjamin-paine/imagenet-1k-256x256)(valid) and [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/)(valid, high-resolution). All compared models perform 8x8 compression with 16 latent channels.
 
 | Dataset             | Model   | PSNR      | SSIM     | LPIPS     | rFID     |                                                                
 |---------------------|---------|-----------|----------|-----------|----------|
@@ -18,7 +21,7 @@ Evaluation results of KVAE 2D model on [Imagenet-256](https://huggingface.co/dat
 | DIV2K               | Flux    | 32.64     | 0.91     | 0.061     | -        |
 | DIV2K               | KVAE 2D | **33.67** | **0.92** | **0.060** | -        |
 
-Evaluation results of KVAE 3D model on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dataset/) dataset.
+Evaluation results of KVAE 3D model on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. All compared models perform 4x8x8 compression with 16 latent channels.
 
 | Model        | PSNR      | SSIM     | LPIPS     |
 |--------------|-----------|----------|-----------|
