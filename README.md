@@ -12,3 +12,18 @@ Install requirements:
 ```sh 
 pip install -r requirements.txt
 ```
+
+## KVAE 2D inference
+Minimum example for 2d model inference in presented in  
+
+
+## KVAE 3D inference
+For simple test, run
+```sh
+python inference.py --frames 999
+```
+
+To use optimized compiled encoder version, run (max duration 257 frames):
+```sh
+python inference.py --frames 257 --optim
+```

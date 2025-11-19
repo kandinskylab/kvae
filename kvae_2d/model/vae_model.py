@@ -2,7 +2,7 @@ from typing import Dict
 
 import torch
 import torch.nn as nn
-from huggingface_hub import ModelHubMixin
+from huggingface_hub import PyTorchModelHubMixin
 
 from .decoder import Decoder2D
 from .encoder import Encoder2D
@@ -10,8 +10,9 @@ from .regularizers import GaussianPrior
 
 
 class KVAE2D(
-    ModelHubMixin,
-    library_name="kvae-10",
+    torch.nn.Module,
+    PyTorchModelHubMixin,
+    library_name="KVAE 2D",
     tags=["vae"],
     repo_url="https://github.com/kandinskylab/kvae-1",
 ):
@@ -26,6 +27,7 @@ class KVAE2D(
         ch_mult=(1, 2, 4, 8),
         bottleneck: nn.Module = None,
     ):
+        super().__init__()
         self.encoder = Encoder2D(
             in_channels=in_channels,
             ch=channels,
