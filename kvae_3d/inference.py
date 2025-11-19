@@ -58,15 +58,6 @@ def infer(video_path, model, out_dir, frames=17, input_norm='m11', resize_input=
 
     input_tensor = input_tensor[:, :, :real_len]
     recs = recs[:, :, :real_len]
-
-    # Crop to original shape (if needed)
-    # *_, rec_h, rec_w = recs.shape
-    # dh = rec_h - orig_h
-    # dw = rec_w - orig_w
-    # if dh > 0:
-    #     recs = recs[..., dh//2:-dh//2, :]
-    # if dw > 0:
-    #     recs = recs[..., dw//2:-dw//2]
     
     torch.testing.assert_close(recs.shape, input_tensor.shape)
     

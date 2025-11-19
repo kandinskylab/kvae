@@ -412,7 +412,7 @@ class CachedPXSUpsample(PXSUpsample):
             x = self.temporal_upsample(x, cache)
 
         # SPATIAL UPSAMPLE
-        s_out = self.spatial_upsample_NEW(x)
+        s_out = self.spatial_upsample(x)
         to = torch.empty_like(s_out)
 
         lin_out = self.linear(s_out, write_to=to)
