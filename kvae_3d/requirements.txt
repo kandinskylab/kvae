@@ -1,7 +1,6 @@
 torch
 torchvision
 torchmetrics
-omegaconf
 tqdm
 einops
 av
