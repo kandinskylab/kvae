@@ -1,12 +1,20 @@
-import torch.nn as nn
+from typing import Dict
 
-from .autoencoder import AutoEncoder
-from .regularizers import GaussianPrior
+import torch
+import torch.nn as nn
+from huggingface_hub import ModelHubMixin
+
 from .decoder import Decoder2D
 from .encoder import Encoder2D
+from .regularizers import GaussianPrior
 
 
-class KVAE2D(AutoEncoder):
+class KVAE2D(
+    ModelHubMixin,
+    library_name="kvae-10",
+    tags=["vae"],
+    repo_url="https://github.com/kandinskylab/kvae-1",
+):
     def __init__(
         self,
         in_channels=3,
@@ -18,7 +26,7 @@ class KVAE2D(AutoEncoder):
         ch_mult=(1, 2, 4, 8),
         bottleneck: nn.Module = None,
     ):
-        encoder = Encoder2D(
+        self.encoder = Encoder2D(
             in_channels=in_channels,
             ch=channels,
             ch_mult=ch_mult,
@@ -26,7 +34,7 @@ class KVAE2D(AutoEncoder):
             z_channels=z_channels,
             double_z=double_z,
         )
-        decoder = Decoder2D(
+        self.decoder = Decoder2D(
             out_ch=in_channels,
             ch=channels,
             ch_mult=ch_mult,
@@ -34,5 +42,18 @@ class KVAE2D(AutoEncoder):
             in_channels=None,
             z_channels=z_channels,
         )
-        posterior = bottleneck or GaussianPrior()
-        super().__init__(encoder=encoder, decoder=decoder, bottleneck=posterior)
+
+        self.bottleneck = bottleneck or GaussianPrior()
+
+    def encode(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+        latent = self.encoder(x)
+        output = self.bottleneck(latent)
+        return output
+
+    def decode(self, latent: torch.Tensor) -> torch.Tensor:
+        return self.decoder(latent)
+
+    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+        output_dict = self.encode(x)
+        output_dict["x_hat"] = self.decode(output_dict["y_hat"])
+        return output_dict

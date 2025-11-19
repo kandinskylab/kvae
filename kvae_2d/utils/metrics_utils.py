@@ -4,7 +4,7 @@ from torchmetrics.image.fid import FrechetInceptionDistance
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
 
-def compute_psnr_range(src, dist, input_type="video", clip: bool = True):
+def compute_psnr_range(src, dist, input_type="image", clip: bool = True):
     src = (src.float() + 1) / 2
     dist = (dist.float() + 1) / 2
     if clip:

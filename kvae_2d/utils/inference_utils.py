@@ -1,6 +1,5 @@
-import gc
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Iterable, Any
 
 import cv2
 import numpy as np
@@ -12,13 +11,26 @@ from torchmetrics.image.fid import FrechetInceptionDistance
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 from tqdm import tqdm
 
-from lib.data import ImageDataset
-from lib.training.utils import transform_eq
-from lib.utils import recursive_to
+from .data import ImageDataset
 from .metrics_utils import compute_psnr_range, lpips_score, add_fid_images
 
 
-def _mean_value(values: List[Union[torch.Tensor, int, float]]) -> numpy.ndarray:
+def recursive_to(obj: Iterable[Any], device: Union[str, torch.device], dtype: torch.dtype = None):
+    if isinstance(obj, list):
+        for i in range(len(obj)):
+            obj[i] = recursive_to(obj[i], device=device, dtype=dtype)
+    elif isinstance(obj, dict):
+        for key, value in obj.items():
+            obj[key] = recursive_to(value, device=device, dtype=dtype)
+    elif isinstance(obj, torch.Tensor):
+        obj = obj.to(device)
+        if dtype is not None:
+            obj = obj.type(dtype)
+        return obj
+    return obj
+
+
+def mean_value(values: List[Union[torch.Tensor, int, float]]) -> np.ndarray:
     if isinstance(values[0], (int, float)):
         return np.mean(values)
     elif isinstance(values[0], torch.Tensor):
@@ -102,7 +114,6 @@ def test_dataset(
 @torch.inference_mode()
 def validate(
     model,
-    discriminator=None,
     save_path: str = None,
     image_save_path=None,
     datasets: List[Union[str, ImageDataset]] = None,
@@ -110,8 +121,6 @@ def validate(
     device: Union[str, torch.device] = "cpu",
     loss_device: Union[str, torch.device] = "cpu",
     dtype: torch.dtype = torch.bfloat16,
-    output_shape=None,
-    shape_divisor=(32, 32),
     batch_size: int = None,
     num_workers: int = 0,
     eq_scale: int = None,
@@ -133,7 +142,6 @@ def validate(
         results = test_dataset(
             dataset=dataset,
             model=model,
-            discriminator=discriminator,
             loss=loss,
             save_path=image_save_path / dataset.name if image_save_path else None,
             device=device,

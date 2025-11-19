@@ -7,7 +7,7 @@ def nonlinearity(x):  # swish
     return x * torch.sigmoid(x)
 
 
-def get_norm_layer_2d(in_channels, num_groups: int = 32):
+def get_norm_layer_2d(in_channels, num_groups: int = 32, **kwargs):
     return nn.GroupNorm(num_channels=in_channels, num_groups=num_groups, eps=1e-6, affine=True)
 
 

@@ -1,8 +1,9 @@
 from pathlib import Path
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Sequence
 
 import cv2
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose, ToTensor, Resize
 
@@ -61,11 +62,27 @@ class ImageDataset(Dataset):
         if self.transform:
             frames = self.transform(frames)
         frames = 2 * frames - 1
-        if self.fake_time:
-            frames = frames.unsqueeze(1)
+        return frames
 
-        output_dict = {"paths": path, self.output_key: frames}
-        if self.meta is not None:
-            output_dict.update(self.meta[item])
 
-        return output_dict
+class CloseCenterCrop:
+    def __init__(self, shape_divisor: Sequence[int] = (8, 8)):
+        """Crop to nearest shape divisible by `shape_divisor`.
+
+        Parameters
+        ----------
+        shape_divisor: Tuple[int]
+            Divisors of shape. Same dim order as in the image exept first dim (CTHW).
+        """
+        self.shape_divisor = torch.tensor([1] + list(shape_divisor))
+
+    def __call__(self, img: torch.Tensor) -> torch.Tensor:
+        assert img.ndim == len(
+            self.shape_divisor
+        ), "input should have exactly one additional first channel dimension to dimensions or shape_divisor"
+        shape = torch.tensor(img.shape)
+        new_shape = (shape // self.shape_divisor) * self.shape_divisor
+        start = (shape - new_shape) // 2
+        end = start + new_shape
+        sl = tuple(slice(s, e) for s, e in zip(start, end))
+        return img[sl].clone()
