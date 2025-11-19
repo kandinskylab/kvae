@@ -5,7 +5,6 @@ import os
 import datetime
 from tqdm import tqdm
 
-from omegaconf import OmegaConf
 import torch
 torch._dynamo.config.cache_size_limit = 10000
 
