@@ -17,7 +17,6 @@ class ImageDataset(Dataset):
         transform: Callable = None,
         fake_time_dim: bool = False,
         subset: slice = None,
-        output_key: str = "frames",
         name: str = None,
     ):
         """Simple image dataset.
@@ -35,16 +34,11 @@ class ImageDataset(Dataset):
         output_shape:
             If not None, creates default transform with Resize and ToTensor. Default is (256, 256).
             This parameter is ignored if transform is passed.
-        output_key:
-            Image output key.
-        drop_none_columns:
-            Drop samples if one of these columns is False (cast to False, e.g. None or empty string).
         """
         self.root_path = Path(root_path)
         self.image_paths = np.array(sorted(self.root_path.glob(regex)))
         default_transform = Compose([ToTensor(), Resize(size=output_shape)]) if output_shape is not None else ToTensor()
         self.transform = transform or default_transform
-        self.output_key = output_key
         self.fake_time = fake_time_dim
 
         if subset is not None:
