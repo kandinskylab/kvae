@@ -46,6 +46,5 @@ def show_image(image: torch.Tensor, scale_zero_one: bool = False):
         else:
             image = image.permute([1, 2, 0])
         image = image.detach().float().cpu().numpy()
-        # (data / 255.0 - v_mean) / v_std
         image = (image.clip(0, 1) * 255).astype(np.uint8)
     display(Image.fromarray(image))
