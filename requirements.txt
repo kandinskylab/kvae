@@ -1,8 +1,20 @@
-torch
-torchvision
-torchmetrics
-tqdm
-einops
-av
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.8.0+cu128
+torchvision==0.23.0+cu128
+torchmetrics==1.8.2
+torchcodec==0.6.0
+dill==0.4.1
+multiprocess==0.70.19
+diffusers
+huggingface-hub
 safetensors
-huggingface_hub
+omegaconf
+einops
+numpy==1.26.4
+pandas==3.0.1
+opencv-python
+pillow
+regex
+requests
+tqdm
+ipykernel

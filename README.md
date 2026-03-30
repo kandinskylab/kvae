@@ -1,26 +1,17 @@
 <div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/kvae-white.png">
-    <source media="(prefers-color-scheme: light)" srcset="assets/kvae-black.png">
-    <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
-  </picture>
-</div>
-<div align="center">
-  <a href="https://habr.com/ru/companies/sberbank/articles/966450/">Habr</a> | <a href="https://kandinskylab.ai/">Project Page</a> | Technical Report (soon) | 🤗 <a href=https://huggingface.co/kandinskylab/KVAE-3D-1.0> KVAE-3D </a> / <a href=https://huggingface.co/kandinskylab/KVAE-2D-1.0> KVAE-2D </a> 
+  <a href="https://habr.com/ru/companies/sberbank/articles/966450/">Habr-KVAE-1.0</a> | <a href="https://kandinskylab.ai/">Project Page</a> | Technical Report (soon)
+  
+  🤗 <a href=https://huggingface.co/kandinskylab/KVAE-2D-1.0> KVAE-2D-1.0 </a> / <a href=https://huggingface.co/kandinskylab/KVAE-3D-1.0> KVAE-3D-1.0 </a>  / <a href=https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s8> KVAE-3D-2.0-t4s8 </a>  / <a href=https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s16> KVAE-3D-2.0-t4s16 </a> 
 </div>
 
-<h1>KVAE 1.0: Video and Image tokenizers</h1>
+<h1>KVAE: Video and Image tokenizers</h1>
 
 In this repository, we provide tokenizers for image and video diffusion models: 
 KVAE-2D and KVAE-3D.
 
-KVAE-2D model has compression 8x8 and 16 latent channels.
-
-KVAE-3D model has time compression 4, spacial compression 8x8 and 16 latent channels 
-
 ## Evaluation results
 
-### KVAE-2D
+### KVAE-2D-1.0
 Reconstructions comparison of KVAE-2D and Flux:
 
 <img src="assets/kvae2d-comparison.png" />
@@ -37,11 +28,7 @@ All compared models perform 8x8 compression with 16 latent channels:
 | DIV2K               | Flux    | 32.64     | 0.91     | 0.061     | -        |
 | DIV2K               | KVAE 2D | **33.67** | **0.92** | **0.060** | -        |
 
-DiT training metrics comparison (blue — DiT+Flux, green and red — two versions of DiT+KVAE-2D):
-
-<img src="assets/kvae2d-charts.png" />
-
-### KVAE-3D
+### KVAE-3D-1.0
 
 Reconstructions comparison of KVAE-3D and Hunyuan:
 
@@ -55,46 +42,48 @@ Evaluation results of KVAE-3D model on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dat
 | HunyuanVideo | 33.91     | 0.91     | 0.103     | 
 | KVAE-3D      | **35.63** | **0.92** | **0.088** |
 
+### KVAE-3D-2.0-t4s8
+
+Evaluation results of KVAE-3D-2.0, Hunyuan and Wan on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. All compared models perform 4x8x8 compression with 16 latent channels:
+
+<img src="assets/kvae3d-20-comparison-s8.jpg" />
+
+
+### KVAE-3D-2.0-t4s8
+
+Evaluation results of KVAE-3D-2.0, Hunyuan and Wan on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. All compared models perform 4x16x16 compression:
+
+<img src="assets/kvae3d-20-comparison-s16.jpg" />
 
 ## Inference examples
 
 ### Setup
 
-Install requirements:
-```sh 
+Create environment with torch==2.8.0 с CUDA 12.8
+```sh
+conda create -n kvae_inference python=3.11
+conda activate kvae_inference
 pip install -r requirements.txt
 ```
 
-### KVAE-2D inference
-```python
-from kvae_2d.model import KVAE2D
+### KVAE inference 
 
-model = KVAE2D.from_pretrained("kandinskylab/KVAE-2D-1.0").eval()
-latent = model.encode(image)['y_hat']
-rec = model.decode(latent)
-```
-More detailed example is presented in `inference_2d.ipynb`
-
-### KVAE-3D inference
-For simple test, go to `kvae_3d` folder and run
+To run a 2d models on some dataset to calculate metrics, you can use the script:
 ```sh
-python inference.py --frames 999
+PYTHONPATH=. python scripts/inference_2d_kvae.py --dataset_folder ./assets/images/ --model KVAE_1.0 
 ```
-It will save reconstructions to `output` folder at repository root.
 
-To use optimized compiled encoder version, run (max duration 257 frames):
+To run a 3d models:
 ```sh
-python inference.py --frames 257 --optim
+PYTHONPATH=. python scripts/inference_3d_kvae.py --dataset_folder ./assets/test1/ --model KVAE_2.0-t4s8
 ```
 
-## Citation
+If you want to save the reconstructions, then set the parameter  `--saving_folder` with the folder to save `./your_path/`. Please note that this will affect the running time, especially of the 3d model, even though saving works asynchronously with the rest of the components.
 
+More detailed example of work with models is presented in [`inference_examples.ipynb`](scripts/inference_examples.ipynb)
+
+To use the library `mediapy`, you will need to install `ffmpeg`:
+```sh
+conda install -c conda-forge ffmpe
+pip install -q mediapy
 ```
-@misc{kvae_v1_2025,
-    author = {Kirill Chernyshev, Andrey Shutkin, Ilia Vasiliev,
-              Denis Parkhomenko, Ivan Kirillov,
-              Dmitrii Mikhailov, Denis Dimitrov},
-    title = {KVAE 1.0: 2D and 3D tokenizers for Image & Video generation models},
-    howpublished = {\url{https://github.com/kandinskylab/kvae-1}},
-    year = 2025
-}
