@@ -7,7 +7,7 @@
 <h1>KVAE: Video and Image tokenizers</h1>
 
 In this repository, we provide tokenizers for image and video diffusion models: 
-KVAE-2D and KVAE-3D.
+KVAE 1.0 and KVAE 2.0.
 
 ## Inference instruction
 
@@ -22,17 +22,17 @@ pip install -r requirements.txt
 
 ### KVAE inference 
 
-To run a 2d models on some dataset to calculate metrics, you can use the script:
+To run an image model on some dataset to calculate metrics, you can use the script:
 ```sh
 PYTHONPATH=. python scripts/inference_2d_kvae.py --dataset_folder ./assets/images/ --model KVAE_1.0 
 ```
 
-To run a 3d models:
+To run video models:
 ```sh
 PYTHONPATH=. python scripts/inference_3d_kvae.py --dataset_folder ./assets/test1/ --model KVAE_2.0-t4s8
 ```
 
-If you want to save the reconstructions, then set the parameter  `--saving_folder` with the folder to save `./your_path/`. Please note that this will affect the running time, especially of the 3d model, even though saving works asynchronously with the rest of the components.
+If you want to save the reconstructions, then set the parameter  `--saving_folder` with the folder to save `./your_path/`. Please note that this will affect the running time, especially of the video model, even though saving works asynchronously with the rest of the components.
 
 More detailed example of work with models is presented in [`inference_examples.ipynb`](scripts/inference_examples.ipynb)
 
@@ -46,25 +46,25 @@ pip install -q mediapy
 
 ### KVAE-3D-2.0-t4s8
 
-Evaluation results of KVAE-3D-2.0, Hunyuan and Wan on [MCL-JCV (720p)](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. All compared models perform 4x8x8 compression with 16 latent channels:
+Evaluation results of video KVAE 2.0, Hunyuan 1.0 and Wan 2.1 on [MCL-JCV (720p)](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. All compared models perform 4x8x8 compression with 16 latent channels:
 
-<img src="assets/kvae3d-20-comparison-s8.jpg" />
+<img src="assets/kvae3d-20-comparison-s8.jpg" width="900" height="225" />
 
 
 ### KVAE-3D-2.0-t4s16
 
-Evaluation results of KVAE-3D-2.0, Hunyuan and Wan on [MCL-JCV (720p)](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. All compared models perform 4x16x16 compression:
+Evaluation results of video KVAE 2.0, Hunyuan 1.5 and Wan 2.2 on [MCL-JCV (720p)](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. All compared models perform 4x16x16 compression:
 
-<img src="assets/kvae3d-20-comparison-s16.jpg" />
+<img src="assets/kvae3d-20-comparison-s16.jpg" width="840" height="225" />
 
 
 ### KVAE-3D-1.0
 
-Reconstructions comparison of KVAE-3D and Hunyuan:
+Reconstructions comparison of video KVAE 1.0 and Hunyuan 1.0:
 
 <img src="assets/kvae3d-comparison.png" />
 
-Evaluation results of KVAE-3D model on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dataset/) dataset with downsampling to 540p. All compared models perform 4x8x8 compression with 16 latent channels:
+Evaluation results of video KVAE 1.0 model on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dataset/) dataset with downsampling to 540p. All compared models perform 4x8x8 compression with 16 latent channels:
 
 | Model        | PSNR      | SSIM     | LPIPS     |
 |--------------|-----------|----------|-----------|
@@ -76,11 +76,11 @@ Due to problems with high resolutions, here inference was performed at a lower r
 
 
 ### KVAE-2D-1.0
-Reconstructions comparison of KVAE-2D and Flux:
+Reconstructions comparison of image KVAE 1.0 and Flux:
 
 <img src="assets/kvae2d-comparison.png" />
 
-Evaluation results of KVAE-2D model on [Imagenet-256](https://huggingface.co/datasets/benjamin-paine/imagenet-1k-256x256) (valid) and [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) (valid, high-resolution). 
+Evaluation results of image KVAE model on [Imagenet-256](https://huggingface.co/datasets/benjamin-paine/imagenet-1k-256x256) (valid) and [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) (valid, high-resolution). 
 All compared models perform 8x8 compression with 16 latent channels:
 
 | Dataset             | Model   | PSNR      | SSIM     | LPIPS     | rFID     |                                                                
