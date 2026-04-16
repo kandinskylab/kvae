@@ -1,3 +1,4 @@
+from typing import Literal
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -44,7 +45,7 @@ class PXSUpsample(nn.Module):
 
 
 class CachedPXSUpsample(nn.Module):
-    def __init__(self, in_channels: int, compress_time: bool, factor: int = 2):
+    def __init__(self, in_channels: int, compress_time: bool, factor: int = 2, padding_mode: Literal["zeros", None] = None,):
         super().__init__()
         self.temporal_compress = compress_time
         self.factor = factor
@@ -55,7 +56,7 @@ class CachedPXSUpsample(nn.Module):
             kernel_size=(1, 3, 3),
             stride=(1, 1, 1),
             padding=(0, 1, 1),
-            padding_mode="reflect",
+            padding_mode=padding_mode or 'reflect',
         )
 
         if self.temporal_compress:
@@ -65,6 +66,7 @@ class CachedPXSUpsample(nn.Module):
                 kernel_size=(3, 1, 1),
                 stride=(1, 1, 1),
                 dilation=(1, 1, 1),
+                padding_mode=padding_mode
             )
 
         self.linear = SafeConv3d(in_channels, in_channels, kernel_size=1, stride=1)
@@ -151,7 +153,7 @@ class PXSDownsample(nn.Module):
 
 class CachedPXSDownsample(nn.Module):
     def __init__(
-        self, in_channels: int, compress_time: bool, factor: int = 2, version: int = 1
+        self, in_channels: int, compress_time: bool, factor: int = 2, version: int = 1, padding_mode: Literal["zeros", None] = None,
     ):
         super().__init__()
         self.temporal_compress = compress_time
@@ -168,7 +170,7 @@ class CachedPXSDownsample(nn.Module):
             kernel_size=(1, 3, 3),
             stride=(1, 2, 2),
             padding=(0, 1, 1),
-            padding_mode="reflect",
+            padding_mode=padding_mode or 'reflect',
         )
 
         if self.temporal_compress:
@@ -180,6 +182,7 @@ class CachedPXSDownsample(nn.Module):
                         kernel_size=(2, 1, 1),
                         stride=(1, 1, 1),
                         dilation=(1, 1, 1),
+                        padding_mode=padding_mode
                     ),
                     CachedCausalConv3d(
                         out_channels,
@@ -187,6 +190,7 @@ class CachedPXSDownsample(nn.Module):
                         kernel_size=(2, 1, 1),
                         stride=(2, 1, 1),
                         dilation=(1, 1, 1),
+                        padding_mode=padding_mode
                     ),
                 )
             else:
@@ -196,6 +200,7 @@ class CachedPXSDownsample(nn.Module):
                     kernel_size=(3, 1, 1),
                     stride=(2, 1, 1),
                     dilation=(1, 1, 1),
+                    padding_mode=padding_mode
                 )
 
         self.linear = nn.Conv3d(out_channels, out_channels, kernel_size=1, stride=1)

@@ -138,6 +138,7 @@ class CachedEncoder3D(nn.Module):
         downsample_version: Literal[1, 2] = 1,
         temporal_compress_start_level: int = 0,
         act_fn: str = "swish",
+        padding_mode: Literal["zeros", None] = None,
     ):
         super().__init__()
         self.ch = ch
@@ -155,6 +156,7 @@ class CachedEncoder3D(nn.Module):
             chan_in=in_channels,
             chan_out=round(in_ch_mult[0] * self.ch),
             kernel_size=3,
+            padding_mode=padding_mode,
         )
 
         normalization = functools.partial(get_normalization, norm_name=norm_type)
@@ -175,20 +177,20 @@ class CachedEncoder3D(nn.Module):
                         in_channels=block_in,
                         out_channels=block_out,
                         normalization=normalization,
+                        padding_mode=padding_mode,
                     )
                 )
                 block_in = block_out
             down = nn.Module()
             down.block = block
             if i_level != self.num_resolutions - 1:
-                if temporal_compress_start_level <= i_level < temporal_compress_level:
-                    down.downsample = CachedPXSDownsample(
-                        block_in, compress_time=True, version=downsample_version
-                    )
-                else:
-                    down.downsample = CachedPXSDownsample(
-                        block_in, compress_time=False, version=downsample_version
-                    )
+                compress_time = temporal_compress_start_level <= i_level < temporal_compress_level
+                down.downsample = CachedPXSDownsample(
+                    block_in, 
+                    compress_time=compress_time, 
+                    version=downsample_version, 
+                    padding_mode=padding_mode,
+                )
             self.down.append(down)
 
         # middle
@@ -197,12 +199,14 @@ class CachedEncoder3D(nn.Module):
             in_channels=block_in,
             out_channels=block_in,
             normalization=normalization,
+            padding_mode=padding_mode,
         )
 
         self.mid.block_2 = CachedCausalResnetBlock3D(
             in_channels=block_in,
             out_channels=block_in,
             normalization=normalization,
+            padding_mode=padding_mode,
         )
 
         # end
@@ -212,6 +216,7 @@ class CachedEncoder3D(nn.Module):
             chan_in=block_in,
             chan_out=2 * z_channels if double_z else z_channels,
             kernel_size=3,
+            padding_mode=padding_mode,
         )
 
     def forward(self, x: torch.Tensor):
@@ -251,6 +256,7 @@ class CachedDecoder3D(nn.Module):
         temporal_compress_start_level: int = 0,
         act_fn: str = "swish",
         zq_ch: Optional[int] = None,
+        padding_mode: Literal["zeros", None] = None,
     ):
         super().__init__()
         self.ch = ch
@@ -271,6 +277,7 @@ class CachedDecoder3D(nn.Module):
             chan_in=z_channels,
             chan_out=block_in,
             kernel_size=3,
+            padding_mode=padding_mode,
         )
 
         modulated_norm = functools.partial(
@@ -284,6 +291,7 @@ class CachedDecoder3D(nn.Module):
             out_channels=block_in,
             zq_ch=zq_ch,
             normalization=modulated_norm,
+            padding_mode=padding_mode,
         )
 
         self.mid.block_2 = CachedCausalResnetBlock3D(
@@ -291,6 +299,7 @@ class CachedDecoder3D(nn.Module):
             out_channels=block_in,
             zq_ch=zq_ch,
             normalization=modulated_norm,
+            padding_mode=padding_mode,
         )
 
         # upsampling
@@ -305,20 +314,20 @@ class CachedDecoder3D(nn.Module):
                         out_channels=block_out,
                         zq_ch=zq_ch,
                         normalization=modulated_norm,
+                        padding_mode=padding_mode,
                     )
                 )
                 block_in = block_out
             up = nn.Module()
             up.block = block
             if i_level != 0:
-                if (
+                compress_time = (
                     self.num_resolutions - temporal_compress_start_level
                     > i_level
                     >= self.num_resolutions - self.temporal_compress_level
-                ):
-                    up.upsample = CachedPXSUpsample(block_in, compress_time=True)
-                else:
-                    up.upsample = CachedPXSUpsample(block_in, compress_time=False)
+                )
+                up.upsample = CachedPXSUpsample(block_in, compress_time=compress_time, padding_mode=padding_mode)
+                
             self.up.insert(0, up)
 
         # end
@@ -328,6 +337,7 @@ class CachedDecoder3D(nn.Module):
             chan_in=block_in,
             chan_out=out_ch,
             kernel_size=3,
+            padding_mode=padding_mode,
         )
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:

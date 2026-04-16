@@ -1,5 +1,5 @@
 import functools
-from typing import Optional, Callable
+from typing import Optional, Callable, Literal
 
 import torch
 import torch.nn as nn
@@ -92,7 +92,8 @@ class CachedCausalResnetBlock3D(nn.Module):
         out_channels: Optional[int] = None,
         zq_ch: Optional[int] = None,
         normalization: Callable = functools.partial(get_normalization, norm_name="group_norm"),
-        act_fn: str = "swish"
+        act_fn: str = "swish",
+        padding_mode: Literal["zeros", None] = None,
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -109,6 +110,7 @@ class CachedCausalResnetBlock3D(nn.Module):
             chan_in=in_channels,
             chan_out=out_channels,
             kernel_size=3,
+            padding_mode=padding_mode,
         )
 
         self.norm2 = normalization(
@@ -119,6 +121,7 @@ class CachedCausalResnetBlock3D(nn.Module):
             chan_in=out_channels,
             chan_out=out_channels,
             kernel_size=3,
+            padding_mode=padding_mode,
         )
         if self.in_channels != self.out_channels:
             self.nin_shortcut = SafeConv3d(

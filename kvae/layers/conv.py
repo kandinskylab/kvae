@@ -1,5 +1,5 @@
 import math
-from typing import Tuple, Union, Optional, Callable
+from typing import Tuple, Union, Optional, Callable, Literal
 
 import torch
 import torch.nn as nn
@@ -80,6 +80,7 @@ class CachedCausalConv3d(nn.Module):
         kernel_size: Union[int, Tuple[int, int, int]],
         stride: Union[int, Tuple[int, int, int]] = (1, 1, 1),
         dilation: Union[int, Tuple[int, int, int]] = (1, 1, 1),
+        padding_mode: Literal["zeros", None] = None,
         **kwargs
     ) -> torch.Tensor:
         super().__init__()
@@ -94,6 +95,7 @@ class CachedCausalConv3d(nn.Module):
         self.time_pad = time_kernel_size - 1
         self.time_kernel_size = time_kernel_size
         self.temporal_dim = 2
+        self.padding_mode = padding_mode
 
         self.stride = stride
         self.conv = SafeConv3d(
@@ -114,7 +116,7 @@ class CachedCausalConv3d(nn.Module):
             0,
             0,
         )
-        input_parallel = F.pad(input_, padding_3d, mode="replicate")
+        input_parallel = F.pad(input_, padding_3d, mode="constant" if self.padding_mode == 'zeros' else (self.padding_mode or 'replicate'))
 
         if self.cache is None:
             first_frame = input_parallel[:, :, :1]
