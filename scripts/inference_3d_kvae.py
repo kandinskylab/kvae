@@ -13,7 +13,7 @@ from pathlib import Path
 import argparse
 
 from torchmetrics import MetricCollection
-from utils.video_metrics import VideoPSNR, VideoLPIPS
+from utils.video_metrics import VideoPSNR, VideoSSIM, VideoLPIPS
 
 from kvae.models import KVAE3D
 
@@ -23,7 +23,7 @@ from utils.saving_reconstruction_utils import (
     save_results_as_png_async,
     quant_renormalization,
 )
-from utils.common_utils import set_seed
+from utils.common_utils import set_seed_and_optimal_cuda_env
 
 
 def run_inference(
@@ -78,6 +78,7 @@ def run_inference(
     metrics = MetricCollection(
         {
             "psnr": VideoPSNR(data_range=(-1, 1), metric_chank_size=10),
+            "ssim": VideoSSIM(data_range=(-1, 1), metric_chank_size=10),
             "lpips": VideoLPIPS(net_type="alex", metric_chank_size=10),
         }
     ).to(device=device)
@@ -127,6 +128,7 @@ def run_inference(
     print("RESULTS")
     print("=" * 40)
     print(f"PSNR (dB): {results['psnr_dataset_mean'].item():.4f}")
+    print(f"SSIM     : {results['ssim_dataset_mean'].item():.4f}")
     print(f"LPIPS    : {results['lpips_dataset_mean'].item():.4f}")
     print("=" * 40)
 
@@ -173,7 +175,7 @@ if __name__ == "__main__":
 
     cli_args = parser.parse_args()
 
-    set_seed(111)
+    set_seed_and_optimal_cuda_env(111)
 
     device = torch.device(f"cuda:{cli_args.device}")
     dtype = torch.bfloat16

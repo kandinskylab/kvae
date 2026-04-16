@@ -29,7 +29,7 @@ def parse_int_tuple(s: str) -> Tuple[int, int]:
     return tuple_vals
 
 
-def set_seed(seed: int = 42):
+def set_seed_and_optimal_cuda_env(seed: int = 42):
     """
     Captures randomness at all levels
     """
@@ -38,5 +38,7 @@ def set_seed(seed: int = 42):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    torch.use_deterministic_algorithms(True)
-    torch.backends.cudnn.deterministic = True
+    # torch.use_deterministic_algorithms(True)
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = True
+    # torch.backends.cuda.matmul.allow_tf32 = True
