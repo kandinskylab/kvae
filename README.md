@@ -52,7 +52,7 @@ Model KVAE-3D-2.0-t4s8 has time compression 4 and spacial compression 8x8.
 
 Evaluation results of video KVAE 2.0, Hunyuan 1.0 and Wan 2.1 on [MCL-JCV (720p)](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. All compared models perform 4x8x8 compression with 16 latent channels:
 
-<img src="assets/kvae3d-20-comparison-s8.jpg" width="900" height="225" />
+<img src="assets/kvae3d-20-comparison-s8.jpg" height="225" />
 
 Reconstruction comparison of KVAE 2.0, Hunyuan 1.0 and Wan 2.1
 
@@ -67,7 +67,7 @@ Model KVAE-3D-2.0-t4s16 has time compression 4 and spacial compression 16x16
 
 Evaluation results of video KVAE 2.0, Hunyuan 1.5 and Wan 2.2 on [MCL-JCV (720p)](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. For the HunyuanVideo model, due to the presence of the full attention block, tiling (default parameters) was used. All compared models perform 4x16x16 compression:
 
-<img src="assets/kvae3d-20-comparison-s16.jpg" width="840" height="225" />
+<img src="assets/kvae3d-20-comparison-s16-last.png" height="170" />
 
 Reconstruction comparison of KVAE 2.0, Hunyuan 1.5 and Wan 2.2
 
@@ -77,7 +77,7 @@ Reconstruction comparison of KVAE 2.0, Hunyuan 1.5 and Wan 2.2
 
 The purpose of the tokenizer is to create a latent space for the generative model, so its superiority can only be established by evaluating the quality of the generations. To do this, we directly compared models (side-by-side, SBS) with the participation of several users. Each was shown pairs of images created for the same query. People evaluated each pair according to three characteristics: adherence to promptness, visual and semantic quality. Quite a lot of marked-up pairs allow you to establish a better-worse relationship between a pair of models. The honesty of the comparison is ensured by a fixed training dataset for the generative model, its architecture, as well as the learning strategy (optimizer parameters, number of steps, batch size, and other hyperparameters). Below are the results of two SBS with KVAE-2.0 4x16x16:
 
-<img src="assets/kvae3d-20-latent-space-qualities.jpg" width="900" height="300" />
+<img src="assets/kvae3d-20-latent-space-qualities.jpg" height="300" />
 
 
 ### KVAE-3D-1.0
