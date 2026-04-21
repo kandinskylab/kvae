@@ -112,10 +112,9 @@ Reconstructions comparison of image KVAE 1.0 and Flux:
 
 ```
 @misc{kvae_2_2026,
-    author = {Kirill Chernyshev, Andrey Shutkin, Ilia Vasiliev,
-              Denis Parkhomenko, Ivan Kirillov,
-              Dmitrii Mikhailov, Denis Dimitrov,
-              Kirill Malakhov, Valeriya Kobenko},
+    author = {Andrey Shutkin, Denis Parkhomenko, Kirill Chernyshev,
+              Ivan Kirillov, Denis Dimitrov,
+              Valeriya Kobenko, Kirill Malakhov},
     title = {KVAE 2.0: video tokenizers for Image & Video generation models},
     howpublished = {\url{https://github.com/kandinskylab/kvae}},
     year = 2026
