@@ -7,6 +7,19 @@ import torch.nn.functional as F
 
 from .common import cast_tuple
 
+from torch.nn.utils.parametrizations import weight_norm
+
+
+def WNConv1d(*args, **kwargs):
+    return weight_norm(nn.Conv1d(*args, **kwargs))
+
+
+def WNConvTranspose1d(*args, **kwargs):
+    return weight_norm(nn.ConvTranspose1d(*args, **kwargs))
+
+# =============================================================================
+# 3d(video) layers
+# =============================================================================
 
 class SafeConv3d(nn.Conv3d):
     def forward(

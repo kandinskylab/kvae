@@ -13,27 +13,28 @@ from pathlib import Path
 import argparse
 
 from torchmetrics import MetricCollection
-from utils.video_metrics import VideoPSNR, VideoSSIM, VideoLPIPS
+from metrics.video_metrics import VideoPSNR, VideoSSIM, VideoLPIPS
 
 from kvae.models import KVAE3D
 
-from utils.video_dataset import VideoDataset
+from data.video_dataset import VideoDataset
 
-from utils.saving_reconstruction_utils import (
+from data.saving_reconstruction_utils import (
     save_results_as_png_async,
     quant_renormalization,
 )
-from utils.common_utils import set_seed_and_optimal_cuda_env
+from scripts.common_utils import set_seed_and_optimal_cuda_env
 
 
-def run_inference(
+def run_video_inference(
     vae: nn.Module,
     device: torch.device,
     data_dir: str,
     batch_size: int = 1,
     saving_folder: Optional[str] = None,
-    input_norm: Literal['-11', 'm11', '01'] = 'm11',
-    seg_len: Literal[4, 8, 16] = 16
+    input_norm: Literal["-11", "m11", "01"] = "m11",
+    seg_len: Literal[4, 8, 16] = 16,
+    dtype: torch.dtype = torch.bfloat16,
 ):
     """
     function performs inference using a variational autoencoder on videos, computes
@@ -58,12 +59,14 @@ def run_inference(
             ('-11': [-1,1], 'm11': [-1, 127/128], '01': [0,1])
     seg_len:
         length of the sequence processed per iteration
+    dtype:
+        floating-point dtype used for model inputs
     """
     
     # # for usual video
-    # dataset = VideoDataset(data_dir, regex='*', input_norm=cli_args.input_norm)
+    # dataset = VideoDataset(data_dir, regex="*", input_norm=input_norm)
     # for video, which is folder of .png frames
-    dataset = VideoDataset(data_dir, regex='*', stream_pattern='*.png', input_norm=cli_args.input_norm)
+    dataset = VideoDataset(data_dir, regex="*", stream_pattern="*.png", input_norm=input_norm)
     # # for yuv video (we must specify shape, because this is raw format)
     # dataset = VideoDataset(
     #     data_dir, regex="*", input_norm=input_norm, shape=(1280, 720)
@@ -100,8 +103,10 @@ def run_inference(
                 for path, rec, real_len in zip(
                     data["paths"], reconstructions, data["real_len"]
                 ):
+                    # rec has [C, T, H, W] layout
+                    valid_length = min(int(real_len), rec.shape[1])
                     save_results_as_png_async(
-                        rec[:real_len, ...],
+                        rec[:, :valid_length, ...],
                         Path(saving_folder) / Path(path).stem,
                         save_executor,
                         input_norm=input_norm,
@@ -120,7 +125,14 @@ def run_inference(
             for video, recon_video, real_len in zip(
                 videos, reconstructions, data["real_len"]
             ):
-                metrics.update(video[:real_len], recon_video[:real_len])
+                # quant_renormalization returns [T, C, H, W] per sample.
+                valid_length = min(
+                    int(real_len), video.shape[0], recon_video.shape[0]
+                )
+                metrics.update(
+                    video[:valid_length],
+                    recon_video[:valid_length],
+                )
 
     results = metrics.compute()
 
@@ -190,11 +202,12 @@ if __name__ == "__main__":
         KVAE3D.from_pretrained(model_paths[cli_args.model]).eval().to(device).to(dtype)
     )
 
-    psnr, lpips = run_inference(
+    psnr, lpips = run_video_inference(
         vae=vae,
         data_dir=cli_args.dataset_folder,
         device=device,
         saving_folder=cli_args.saving_folder,
         input_norm=cli_args.input_norm,
-        seg_len=cli_args.seg_len
+        seg_len=cli_args.seg_len,
+        dtype=dtype,
     )

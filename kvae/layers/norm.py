@@ -11,7 +11,6 @@ from .conv import SafeConv3d
 # =================== 2D Modules ===================
 # ==================================================
 
-
 class DecoderSpatialNorm2D(nn.Module):
     def __init__(
         self,
@@ -47,6 +46,7 @@ class DecoderSpatialNorm2D(nn.Module):
 # ==================================================
 # =================== 3D Modules ===================
 # ==================================================
+
 class RMS_norm(nn.Module):
     def __init__(self, num_channels: int, bias: bool = False):
         super().__init__()

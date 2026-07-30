@@ -3,6 +3,7 @@ torch==2.8.0+cu128
 torchvision==0.23.0+cu128
 torchmetrics==1.8.2
 torchcodec==0.6.0
+torchaudio+cu128
 dill==0.4.1
 multiprocess==0.70.19
 diffusers
@@ -18,3 +19,7 @@ regex
 requests
 tqdm
 ipykernel
+argbind>=0.3.7
+descript-audiotools>=0.7.2
+soundfile
+pesq

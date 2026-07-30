@@ -126,12 +126,15 @@ class VideoDataset(Dataset):
         if self.transform:
             frames = self.transform(frames)
 
+        # Keep real_len aligned with the transformed [C, T, H, W] tensor.
+        real_len = min(length, frames.shape[1])
+
         return {
             "paths": str(path),
             "frames": frames,
             "names": path.stem,
             "items": item,
-            "real_len": length,
+            "real_len": real_len,
         }
 
 
@@ -198,4 +201,6 @@ class VideoReader:
         if self.transform:
             frames = self.transform(frames)
 
-        return {"frames": frames, "real_len": length}
+        # Keep real_len aligned with the transformed [C, T, H, W] tensor.
+        real_len = min(length, frames.shape[1])
+        return {"frames": frames, "real_len": real_len}

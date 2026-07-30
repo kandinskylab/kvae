@@ -13,23 +13,27 @@ KVAE 1.0 and KVAE 2.0.
 
 ### Setup
 
-Create environment with torch==2.8.0 с CUDA 12.8
+Create an environment with Python 3.11 and the PyTorch 2.8.0 CUDA 12.8 build,
+then install this repository in editable mode:
+
 ```sh
 conda create -n kvae_inference python=3.11
 conda activate kvae_inference
+pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
 pip install -r requirements.txt
+pip install --editable .
 ```
 
 ### KVAE inference 
 
 To run an image model on some dataset to calculate metrics, you can use the script:
 ```sh
-PYTHONPATH=. python scripts/inference_2d_kvae.py --dataset_folder ./assets/images/ --model KVAE_1.0 
+python -m scripts.inference_2d_kvae --dataset_folder ./assets/images/ --model KVAE_1.0
 ```
 
 To run video models:
 ```sh
-PYTHONPATH=. python scripts/inference_3d_kvae.py --dataset_folder ./assets/test1/ --model KVAE_2.0-t4s8
+python -m scripts.inference_3d_kvae --dataset_folder ./assets/test1/ --model KVAE_2.0-t4s8
 ```
 
 If you want to save the reconstructions, then set the parameter  `--saving_folder` with the folder to save `./your_path/`. Please note that this will affect the running time, especially of the video model, even though saving works asynchronously with the rest of the components.
