@@ -21,11 +21,11 @@ from ..layers.sampling import CachedPXSDownsample, CachedPXSUpsample
 # =====================================================
 
 
-class KVAE3D(
+class KVAEVideo(
     torch.nn.Module,
     PyTorchModelHubMixin,
-    library_name="KVAE 3D",
-    tags=["vae"],
+    library_name="KVAE",
+    tags=["autoencoder", "video"],
     repo_url="https://github.com/kandinskylab/kvae",
 ):
     def __init__(self, config):

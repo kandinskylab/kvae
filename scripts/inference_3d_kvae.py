@@ -15,7 +15,7 @@ import argparse
 from torchmetrics import MetricCollection
 from metrics.video_metrics import VideoPSNR, VideoSSIM, VideoLPIPS
 
-from kvae.models import KVAE3D
+from kvae.models import KVAEVideo
 
 from data.video_dataset import VideoDataset
 
@@ -199,7 +199,7 @@ if __name__ == "__main__":
     }
 
     vae = (
-        KVAE3D.from_pretrained(model_paths[cli_args.model]).eval().to(device).to(dtype)
+        KVAEVideo.from_pretrained(model_paths[cli_args.model]).eval().to(device).to(dtype)
     )
 
     psnr, lpips = run_video_inference(

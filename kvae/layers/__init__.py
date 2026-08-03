@@ -6,5 +6,5 @@ from .norm import (
     get_normalization,
     DecoderSpatialNorm2D,
 )
-from .resnet import CachedCausalResnetBlock3D, ResnetBlock2D
+from .resnet import CachedCausalResnetBlock3D, ResnetBlock2D, ResnetBlock1D
 from .sampling import PXSUpsample, CachedPXSUpsample, PXSDownsample, CachedPXSDownsample

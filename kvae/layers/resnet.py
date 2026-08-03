@@ -5,15 +5,36 @@ import torch
 import torch.nn as nn
 from diffusers.models.activations import get_activation
 
-from .common import get_activation_with_kwargs
-from .conv import CachedCausalConv3d, SafeConv3d
+from .common import get_activation_with_kwargs, Snake1d
+from .conv import CachedCausalConv3d, SafeConv3d, WNConv1d
 from .norm import get_normalization
+
+# ==================================================
+# =================== 1D Modules ===================
+# ==================================================
+
+class ResnetBlock1D(nn.Module):
+    def __init__(self, dim: int = 16, dilation: int = 1):
+        super().__init__()
+        pad = ((7 - 1) * dilation) // 2
+        self.block = nn.Sequential(
+            Snake1d(dim),
+            WNConv1d(dim, dim, kernel_size=7, dilation=dilation, padding=pad),
+            Snake1d(dim),
+            WNConv1d(dim, dim, kernel_size=1),
+        )
+
+    def forward(self, x):
+        y = self.block(x)
+        pad = (x.shape[-1] - y.shape[-1]) // 2
+        if pad > 0:
+            x = x[..., pad:-pad]
+        return x + y
 
 
 # ==================================================
 # =================== 2D Modules ===================
 # ==================================================
-
 
 class ResnetBlock2D(nn.Module):
     def __init__(

@@ -5,6 +5,7 @@ from typing import Union, Optional, Literal
 import numpy as np
 import torch
 from PIL import Image
+from audiotools import AudioSignal
 
 
 def _save_single_frame(frame, output_path, frame_index):
@@ -152,5 +153,53 @@ def save_tensor_image(
     pil_img.save(file_path)
 
     # print(f"Image saved: {file_path} ({file_path.stat().st_size / 1024:.2f} KB)")
+
+    return file_path
+
+
+def save_audio(
+    tensor: torch.Tensor,
+    reference_tensor: torch.Tensor,
+    sample_rate: int,
+    save_dir_path: Union[str, Path],
+    filename: str,
+) -> Path:
+    """Save an audio reconstruction using the loudness and normalization processing.
+
+    Before writing, the reconstruction loudness is matched to the loudness of
+    the input audio. Loudness calculation and normalization are performed on
+    the current tensor device. The result is moved to CPU only before writing.
+
+    Parameters
+    ----------
+    tensor:
+        Reconstructed audio tensor shaped as [batch, channels, samples].
+    reference_tensor:
+        Original input audio tensor used as the loudness reference. It should
+        be on the same device as tensor.
+    sample_rate:
+        Audio sample rate in Hz.
+    save_dir_path:
+        Directory where the audio file will be saved.
+    filename:
+        Output filename. The .wav extension is added when no extension is
+        provided.
+
+    Returns
+    -------
+    Path
+        Path to the saved audio file.
+    """
+    save_dir_path = Path(save_dir_path)
+    save_dir_path.mkdir(parents=True, exist_ok=True)
+
+    if "." not in filename:
+        filename = f"{filename}.wav"
+    file_path = save_dir_path / filename
+
+    reference_signal = AudioSignal(reference_tensor, sample_rate)
+    reconstruction = AudioSignal(tensor, sample_rate)
+    reconstruction = reconstruction.normalize(reference_signal.loudness())
+    reconstruction.cpu().write(file_path)
 
     return file_path

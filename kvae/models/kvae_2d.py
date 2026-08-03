@@ -17,11 +17,11 @@ from ..layers.norm import DecoderSpatialNorm2D
 # =====================================================
 
 
-class KVAE2D(
+class KVAEImage(
     torch.nn.Module,
     PyTorchModelHubMixin,
-    library_name="KVAE 2D",
-    tags=["vae"],
+    library_name="KVAE",
+    tags=["autoencoder", "image"],
     repo_url="https://github.com/kandinskylab/kvae",
 ):
     def __init__(

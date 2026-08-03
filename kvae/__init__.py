@@ -1,3 +1,3 @@
-from .models import KVAE2D, KVAE3D
+from .models import KVAEAudio, KVAEImage, KVAEVideo
 
-__all__ = ["KVAE2D", "KVAE3D"]
+__all__ = ["KVAEAudio", "KVAEImage", "KVAEVideo"]

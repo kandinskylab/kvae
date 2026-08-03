@@ -12,7 +12,7 @@ from torchmetrics.image import (
 )
 from tqdm import tqdm
 
-from kvae.models import KVAE2D
+from kvae.models import KVAEImage
 from scripts.common_utils import parse_int_tuple, set_seed_and_optimal_cuda_env
 from data.image_dataset import ImageDataset
 from data.saving_reconstruction_utils import save_tensor_image
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         "KVAE_1.0": "kandinskylab/KVAE-2D-1.0",
     }
 
-    vae = KVAE2D.from_pretrained(model_paths[cli_args.model]).eval().to(device).to(dtype)
+    vae = KVAEImage.from_pretrained(model_paths[cli_args.model]).eval().to(device).to(dtype)
 
     psnr, lpips = run_image_inference(
         vae=vae,
