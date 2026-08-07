@@ -1,9 +1,9 @@
 <div align="center">
 
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/kvae_white-no-version.png">
-    <source media="(prefers-color-scheme: light)" srcset="assets/kvae_black-no-version.png">
-    <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/kvae-white-no-version.png">
+    <source media="(prefers-color-scheme: light)" srcset="assets/kvae-black-no-version.png">
+    <img src="assets/kvae-black-no-version.png" alt="KVAE logo" width="600">
   </picture>
 
   <a href="https://habr.com/ru/companies/sberbank/articles/966450/">KVAE 1.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1016814/">KVAE 2.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1053410/">KVAE-Audio on Habr</a> | <a href="https://kandinskylab.ai/">Project page</a> | <a href="http://arxiv.org/abs/2608.05798">Technical report</a>
