@@ -197,12 +197,14 @@ class Decoder1D(nn.Module):
             output_dim = d_model // 2 ** (i + 1)
             block = nn.Sequential(
                 Snake1d(input_dim),
+                # odd strides need output_padding=1 to invert the encoder's downsampling exactly, or decode() silently truncates
                 WNConvTranspose1d(
                     input_dim,
                     output_dim,
                     kernel_size=2 * stride,
                     stride=stride,
                     padding=math.ceil(stride / 2),
+                    output_padding=stride % 2
                 ),
                 ResnetBlock1D(output_dim, dilation=1),
                 ResnetBlock1D(output_dim, dilation=3),

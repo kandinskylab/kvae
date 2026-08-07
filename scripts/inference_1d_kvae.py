@@ -8,7 +8,7 @@ from audiotools import AudioSignal
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from data import AudioDataset, read_audio, save_audio
+from data import AudioDataset, save_audio
 from kvae.models import KVAEAudio
 from metrics.audio_metrics import (
     MelSpectrogramDistance,
@@ -125,43 +125,6 @@ def run_audio_inference(
     return results
 
 
-def compare_audio_reconstructions(
-    legacy_folder: str,
-    current_folder: str,
-) -> dict[str, dict[str, float]]:
-    """Load legacy and current saved WAV files and calculate their difference."""
-    legacy_dataset = AudioDataset(root_path=legacy_folder)
-    current_folder = Path(current_folder)
-    results = {}
-
-    for legacy_path in legacy_dataset.audio_paths:
-        current_path = current_folder / legacy_path.name
-        if not current_path.exists():
-            continue
-
-        legacy = read_audio(legacy_path)
-        current = read_audio(current_path)
-        if legacy.sample_rate != current.sample_rate:
-            raise ValueError(f"Sample rate mismatch for {legacy_path.name}")
-
-        common_length = min(
-            legacy.audio_data.shape[-1], current.audio_data.shape[-1]
-        )
-        legacy_audio = legacy.audio_data[..., :common_length]
-        current_audio = current.audio_data[..., :common_length]
-        difference = current_audio - legacy_audio
-
-        results[legacy_path.name] = {
-            "mse": difference.square().mean().item(),
-            "mae": difference.abs().mean().item(),
-            "max_abs_diff": difference.abs().max().item(),
-            "different_samples": int(torch.count_nonzero(difference).item()),
-            "samples": common_length,
-        }
-
-    return results
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="KVAE 1D inference")
     parser.add_argument("--device", type=int, default=0, help="GPU number")
@@ -183,12 +146,6 @@ if __name__ == "__main__":
         type=str,
         default="./outputs/audio",
         help="Folder for saved reconstructions",
-    )
-    parser.add_argument(
-        "--legacy_folder",
-        type=str,
-        default="./assets/audio_orig_output",
-        help="Folder with reconstructions from the original implementation",
     )
     parser.add_argument(
         "--sample_posterior",
@@ -218,10 +175,3 @@ if __name__ == "__main__":
         dtype=dtype,
         sample_posterior=cli_args.sample_posterior,
     )
-
-    comparison = compare_audio_reconstructions(
-        legacy_folder=cli_args.legacy_folder,
-        current_folder=cli_args.saving_folder,
-    )
-    for filename, difference in comparison.items():
-        print(f"{filename}: {difference}")
