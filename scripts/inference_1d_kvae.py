@@ -79,24 +79,16 @@ def run_audio_inference(
             reconstruction_signal = AudioSignal(reconstruction, sample_rate)
 
             values["waveform_l1"].append(
-                distances["waveform_l1"](reference_signal, reconstruction_signal)
-                .detach()
-                .cpu()
+                distances["waveform_l1"](reference_signal, reconstruction_signal).detach().cpu()
             )
             values["stft"].append(
-                distances["stft"](reference_signal, reconstruction_signal)
-                .detach()
-                .cpu()
+                distances["stft"](reference_signal, reconstruction_signal).detach().cpu()
             )
             values["mel"].append(
-                distances["mel"](reference_signal, reconstruction_signal)
-                .detach()
-                .cpu()
+                distances["mel"](reference_signal, reconstruction_signal).detach().cpu()
             )
             values["sisdr"].append(
-                -distances["sisdr"](reference_signal, reconstruction_signal)
-                .detach()
-                .cpu()
+                -distances["sisdr"](reference_signal, reconstruction_signal).detach().cpu()
             )
 
             if saving_folder is not None:

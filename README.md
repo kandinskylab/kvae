@@ -6,7 +6,7 @@
     <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
   </picture>
 
-  <a href="https://habr.com/ru/companies/sberbank/articles/966450/">KVAE 1.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1016814/">KVAE 2.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1053410/">KVAE-Audio on Habr</a> | <a href="https://kandinskylab.ai/">Project page</a> | Technical report (coming soon)
+  <a href="https://habr.com/ru/companies/sberbank/articles/966450/">KVAE 1.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1016814/">KVAE 2.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1053410/">KVAE-Audio on Habr</a> | <a href="https://kandinskylab.ai/">Project page</a> | <a href="http://arxiv.org/abs/2608.05798">Technical report</a>
 
   Hugging Face: <a href="https://huggingface.co/kandinskylab/KVAE-Audio">Audio</a> | <a href="https://huggingface.co/kandinskylab/KVAE-2D-1.0">Image 1.0</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-1.0">Video 1.0</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s8">Video 2.0 t4s8</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s16">Video 2.0 t4s16</a>
 </div>
