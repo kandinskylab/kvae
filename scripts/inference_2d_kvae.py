@@ -12,19 +12,20 @@ from torchmetrics.image import (
 )
 from tqdm import tqdm
 
-from kvae.models import KVAE2D
-from utils.common_utils import parse_int_tuple, set_seed
-from utils.image_dataset import ImageDataset
-from utils.saving_reconstruction_utils import save_tensor_image
+from kvae.models import KVAEImage
+from scripts.common_utils import parse_int_tuple, set_seed_and_optimal_cuda_env
+from data.image_dataset import ImageDataset
+from data.saving_reconstruction_utils import save_tensor_image
 
 
-def run_inference(
+def run_image_inference(
     vae: nn.Module,
     device: torch.device,
     data_dir: str,
     batch_size: int = 1,
     img_size: Optional[Tuple[int, int]] = None,
     saving_folder: Optional[str] = None,
+    dtype: torch.dtype = torch.bfloat16,
 ):
     """
     function performs inference using a variational autoencoder on videos, computes
@@ -46,6 +47,8 @@ def run_inference(
         output shape of the images in the dataset
     saving_folder: 
         folder where the reconstructions of the videos will be saved as PNG files as frames
+    dtype:
+        floating-point dtype used for model inputs
     """
     if img_size is None:
         batch_size = 1
@@ -128,7 +131,7 @@ if __name__ == "__main__":
 
     cli_args = parser.parse_args()
 
-    set_seed(111)
+    set_seed_and_optimal_cuda_env(111)
 
     device = torch.device(f"cuda:{cli_args.device}")
     dtype = torch.bfloat16
@@ -137,13 +140,14 @@ if __name__ == "__main__":
         "KVAE_1.0": "kandinskylab/KVAE-2D-1.0",
     }
 
-    vae = KVAE2D.from_pretrained(model_paths[cli_args.model]).eval().to(device).to(dtype)
+    vae = KVAEImage.from_pretrained(model_paths[cli_args.model]).eval().to(device).to(dtype)
 
-    psnr, lpips = run_inference(
+    psnr, lpips = run_image_inference(
         vae=vae,
         data_dir=cli_args.dataset_folder,
         batch_size=cli_args.bs,
         img_size=cli_args.img_size,
         device=device,
-        saving_folder=cli_args.saving_folder
+        saving_folder=cli_args.saving_folder,
+        dtype=dtype,
     )

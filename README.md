@@ -1,130 +1,161 @@
 <div align="center">
-  <a href="https://habr.com/ru/companies/sberbank/articles/966450/">Habr-KVAE-1.0</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1016814/">Habr-KVAE-2.0</a> | <a href="https://kandinskylab.ai/">Project Page</a> | Technical Report (soon)
-  
-  🤗 <a href=https://huggingface.co/kandinskylab/KVAE-2D-1.0> KVAE-2D-1.0 </a> / <a href=https://huggingface.co/kandinskylab/KVAE-3D-1.0> KVAE-3D-1.0 </a>  / <a href=https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s8> KVAE-3D-2.0-t4s8 </a>  / <a href=https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s16> KVAE-3D-2.0-t4s16 </a> 
+
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/kvae_white-no-version.png">
+    <source media="(prefers-color-scheme: light)" srcset="assets/kvae_black-no-version.png">
+    <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+  </picture>
+
+  <a href="https://habr.com/ru/companies/sberbank/articles/966450/">KVAE 1.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1016814/">KVAE 2.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1053410/">KVAE-Audio on Habr</a> | <a href="https://kandinskylab.ai/">Project page</a> | Technical report (coming soon)
+
+  Hugging Face: <a href="https://huggingface.co/kandinskylab/KVAE-Audio">Audio</a> | <a href="https://huggingface.co/kandinskylab/KVAE-2D-1.0">Image 1.0</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-1.0">Video 1.0</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s8">Video 2.0 t4s8</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s16">Video 2.0 t4s16</a>
 </div>
 
-<h1>KVAE: Video and Image tokenizers</h1>
+# KVAE: audio, image, and video tokenizers
 
-In this repository, we provide tokenizers for image and video diffusion models: 
-KVAE 1.0 and KVAE 2.0.
+KVAE provides pretrained variational autoencoders for converting audio, images and videos into compact latent representations for diffusion generative models. All model classes use the same high-level workflow: `from_pretrained -> encode -> latent distribution -> decode`.
 
-## Inference instruction
+## Available models
 
-### Setup
+| Modality | Python class | Hugging Face model | Inference |
+| --- | --- | --- | --- |
+| Audio | `KVAEAudio` | [KVAE-Audio](https://huggingface.co/kandinskylab/KVAE-Audio) | [`inference_1d_kvae.py`](scripts/inference_1d_kvae.py) |
+| Image | `KVAEImage` | [KVAE-2D-1.0](https://huggingface.co/kandinskylab/KVAE-2D-1.0) | [`inference_2d_kvae.py`](scripts/inference_2d_kvae.py) |
+| Video | `KVAEVideo` | [KVAE-3D-1.0](https://huggingface.co/kandinskylab/KVAE-3D-1.0) | [`inference_3d_kvae.py`](scripts/inference_3d_kvae.py) |
+| Video | `KVAEVideo` | [KVAE-3D-2.0-t4s8](https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s8) | [`inference_3d_kvae.py`](scripts/inference_3d_kvae.py) |
+| Video | `KVAEVideo` | [KVAE-3D-2.0-t4s16](https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s16) | [`inference_3d_kvae.py`](scripts/inference_3d_kvae.py) |
 
-Create environment with torch==2.8.0 с CUDA 12.8
-```sh
-conda create -n kvae_inference python=3.11
-conda activate kvae_inference
-pip install -r requirements.txt
-```
+## Highlights
 
-### KVAE inference 
+**KVAE-Audio** is a continuous full-band 48 kHz tokenizer with 166.9M parameters and 64 latent channels. Under a fixed text-to-audio generator, it achieves the best CLAP, CE, PQ, and all reported FAD scores on AudioCaps among the compared autoencoders. On MUSDB18-HQ reconstruction, it leads all reported MEL, STFT, waveform, SI-SDR, SDR, and SNR metrics.
 
-To run an image model on some dataset to calculate metrics, you can use the script:
-```sh
-PYTHONPATH=. python scripts/inference_2d_kvae.py --dataset_folder ./assets/images/ --model KVAE_1.0 
-```
+**KVAE-Video 2.0** is available with temporal compression 4 and spatial compression 8 x 8 or 16 x 16. The t4s8 model keeps 16 latent channels, while the t4s16 variant provides a more compact representation for higher spatial compression.
 
-To run video models:
-```sh
-PYTHONPATH=. python scripts/inference_3d_kvae.py --dataset_folder ./assets/test1/ --model KVAE_2.0-t4s8
-```
+<details>
+<summary><b>Show selected evaluation figures</b></summary>
 
-If you want to save the reconstructions, then set the parameter  `--saving_folder` with the folder to save `./your_path/`. Please note that this will affect the running time, especially of the video model, even though saving works asynchronously with the rest of the components.
+### KVAE-Audio latent-space qualities for generation
 
-More detailed example of work with models is presented in [`inference_examples.ipynb`](scripts/inference_examples.ipynb)
+<img src="assets/sbs_same_l.png" />
 
-To use the library `mediapy`, you will need to install `ffmpeg`:
-```sh
-conda install -c conda-forge ffmpeg
-pip install -q mediapy
-```
+### KVAE-Video 2.0 reconstruction
 
-## Evaluation results
-
-### KVAE-3D-2.0-t4s8
-
-Model KVAE-3D-2.0-t4s8 has time compression 4 and spacial compression 8x8.
-
-#### Evaluation of reconstruction
-
-Evaluation results of video KVAE 2.0, Hunyuan 1.0 and Wan 2.1 on [MCL-JCV (720p)](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. All compared models perform 4x8x8 compression with 16 latent channels:
+#### t4s8
 
 <img src="assets/kvae3d-20-comparison-s8.jpg" height="225" />
 
-Reconstruction comparison of KVAE 2.0, Hunyuan 1.0 and Wan 2.1
-
-<img src="assets/kvae3d-20-comparison-s8-artifacts-example.png" />
-
-
-### KVAE-3D-2.0-t4s16
-
-Model KVAE-3D-2.0-t4s16 has time compression 4 and spacial compression 16x16
-
-#### Evaluation of reconstruction
-
-Evaluation results of video KVAE 2.0, Hunyuan 1.5 and Wan 2.2 on [MCL-JCV (720p)](https://mcl.usc.edu/mcl-jcv-dataset/) dataset. For the HunyuanVideo model, due to the presence of the full attention block, tiling (default parameters) was used. All compared models perform 4x16x16 compression:
+#### t4s16
 
 <img src="assets/kvae3d-20-comparison-s16-last.png" height="170" />
 
-Reconstruction comparison of KVAE 2.0, Hunyuan 1.5 and Wan 2.2
+### KVAE-Video 2.0 latent-space qualities for generation
 
-<img src="assets/kvae3d-20-comparison-s16-artifacts-example.png" />
+<img src="assets/kvae3d-20-latent-space-qualities-bars.png" />
 
-#### Evaluation of latent space qualities for generation model
+</details>
 
-The purpose of the tokenizer is to create a latent space for the generative model, so its superiority can only be established by evaluating the quality of the generations. To do this, we directly compared models (side-by-side, SBS) with the participation of several users. Each was shown pairs of images created for the same query. People evaluated each pair according to three characteristics: adherence to promptness, visual and semantic quality. Quite a lot of marked-up pairs allow you to establish a better-worse relationship between a pair of models. The honesty of the comparison is ensured by a fixed training dataset for the generative model, its architecture, as well as the learning strategy (optimizer parameters, number of steps, batch size, and other hyperparameters). Below are the results of two SBS with KVAE-2.0 4x16x16:
+<details>
+<summary><b>Previous versions: KVAE 1.0</b></summary>
 
-<img src="assets/kvae3d-20-latent-space-qualities.jpg" height="300" />
-
-
-### KVAE-3D-1.0
-
-#### Evaluation of reconstruction
-
-Evaluation results of video KVAE 1.0 model on [MCL-JCV](https://mcl.usc.edu/mcl-jcv-dataset/) dataset with downsampling to 540p. All compared models perform 4x8x8 compression with 16 latent channels:
-
-<img src="assets/kvae3d-10-comparison-s8.png" height="150" />
-
-Due to problems with high resolutions, here inference was performed at a lower resolution 540p than for the new models 2.0, which were inferred at a resolution of 720p
-
-Reconstructions comparison of video KVAE 1.0 and Hunyuan 1.0:
-
-<img src="assets/kvae3d-comparison.png" />
-
-
-### KVAE-2D-1.0
-
-#### Evaluation of reconstruction
-
-Evaluation results of image KVAE model on [Imagenet-256](https://huggingface.co/datasets/benjamin-paine/imagenet-1k-256x256) (valid) and [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) (valid, high-resolution). 
-All compared models perform 8x8 compression with 16 latent channels:
+**KVAE-2D-1.0** uses 8 x 8 spatial compression with 16 latent channels and provides the original image tokenizer released with KVAE 1.0.
 
 <img src="assets/kvae2d-comparison-table.png" />
 
-Reconstructions comparison of image KVAE 1.0 and Flux:
+**KVAE-3D-1.0** uses 4 x 8 x 8 compression with 16 latent channels. It was evaluated at 540p, while the newer KVAE-Video 2.0 models target 720p evaluation and improved high-resolution processing.
 
-<img src="assets/kvae2d-comparison.png" />
+<img src="assets/kvae3d-10-comparison-s8.png" height="150" />
+
+</details>
+
+Full metric tables, reconstruction comparisons, human evaluations, and audio generation examples are available in [assets/docs/EVALUATION.md](assets/docs/EVALUATION.md).
+
+## Quick start
+
+Create an environment with Python 3.11 and the PyTorch 2.8.0 CUDA 12.8 build,
+then install this repository in editable mode:
+
+```bash
+conda create -n kvae_inference python=3.11
+conda activate kvae_inference
+
+pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
+pip install -r requirements.txt
+pip install --editable .
+```
+
+## Inference
+
+Run commands from the repository root. The first run downloads weights from Hugging Face Hub unless they are already cached.
+
+### Audio
+
+```bash
+python -m scripts.inference_1d_kvae \
+    --dataset_folder ./assets/audio_test \
+    --saving_folder ./outputs/audio
+```
+
+The released audio model expects mono 48 kHz input and runs in `float32`. Loading preserves the original channels and sample rate; it does not silently resample, downmix, crop, or normalize the input. Saved reconstructions are loudness-matched to their input using the same procedure as the original audio implementation.
+
+### Image
+
+```bash
+python -m scripts.inference_2d_kvae \
+    --dataset_folder ./assets/image_test \
+    --model KVAE_1.0 \
+    --saving_folder ./outputs/images
+```
+
+Image inference uses `bfloat16` and expects PNG inputs normalized to the model range. Use `--img_size H,W` to resize samples to a common shape and enable batching; without an explicit size, the inference script uses batch size one. Reconstructions can be saved as PNG files, and the script reports PSNR and LPIPS.
+
+### Video
+
+```bash
+python -m scripts.inference_3d_kvae \
+    --dataset_folder ./assets/video_test \
+    --model KVAE_2.0-t4s8 \
+    --seg_len 16 \
+    --saving_folder ./outputs/video
+```
+
+Video inference uses `bfloat16` and expects one directory of PNG frames per video. `--seg_len` controls temporal chunking, while `--input_norm` selects the input normalization convention.
+
+Temporal context is cached inside the causal convolution, residual, and sampling blocks. These caches are mutable, so one `KVAEVideo` instance cannot safely process independent samples concurrently or interleave their chunks. Use a separate model instance per concurrent stream. Sequential calls are supported because `encode` and `decode` reset their caches before and after each call.
+
+Detailed Python API examples, input layouts, metrics, and script options are in [assets/docs/INFERENCE.md](assets/docs/INFERENCE.md).
+
+A runnable example for all three modalities is available in [scripts/inference_examples.ipynb](scripts/inference_examples.ipynb).
 
 ## Citation
 
-```
+```bibtex
+@misc{kvae_audio_2026,
+    author = {Ivan Kirillov, Denis Parkhomenko, Alexander Ivanov,
+              Azat Saginbaev, Egor Silvestrov, Denis Dimitrov},
+    title = {KVAE-Audio: a full-band continuous audio tokenizer for generative models},
+    howpublished = {\url{https://github.com/kandinskylab/kvae}},
+    year = {2026}
+}
+
 @misc{kvae_2_2026,
     author = {Andrey Shutkin, Denis Parkhomenko, Kirill Chernyshev,
               Ivan Kirillov, Denis Dimitrov,
               Valeriya Kobenko, Kirill Malakhov},
     title = {KVAE 2.0: video tokenizers for Image & Video generation models},
     howpublished = {\url{https://github.com/kandinskylab/kvae}},
-    year = 2026
+    year = {2026}
 }
+
 @misc{kvae_1_2025,
     author = {Kirill Chernyshev, Andrey Shutkin, Ilia Vasiliev,
               Denis Parkhomenko, Ivan Kirillov,
               Dmitrii Mikhailov, Denis Dimitrov},
     title = {KVAE 1.0: image and video tokenizers for Image & Video generation models},
     howpublished = {\url{https://github.com/kandinskylab/kvae}},
-    year = 2025
+    year = {2025}
 }
 ```
+
+## License
+
+The project is distributed under the terms of [LICENSE](LICENSE).
