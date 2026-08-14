@@ -8,7 +8,7 @@
 
   <a href="https://habr.com/ru/companies/sberbank/articles/966450/">KVAE 1.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1016814/">KVAE 2.0 on Habr</a> | <a href="https://habr.com/ru/companies/sberbank/articles/1053410/">KVAE-Audio on Habr</a> | <a href="https://kandinskylab.ai/">Project page</a> | <a href="http://arxiv.org/abs/2608.05798">Technical report</a>
 
-  Hugging Face: <a href="https://huggingface.co/kandinskylab/KVAE-Audio">Audio</a> | <a href="https://huggingface.co/kandinskylab/KVAE-2D-1.0">Image 1.0</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-1.0">Video 1.0</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s8">Video 2.0 t4s8</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s16">Video 2.0 t4s16</a>
+  Hugging Face: <a href="https://huggingface.co/kandinskylab/KVAE-Audio">Audio</a> | <a href="https://huggingface.co/kandinskylab/KVAE-2D-1.0">Image 1.0</a> | <a href="https://huggingface.co/kandinskylab/KVAE-2D-2.0">Image 2.0</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-1.0">Video 1.0</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s8">Video 2.0 t4s8</a> | <a href="https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s16">Video 2.0 t4s16</a>
 </div>
 
 # KVAE: audio, image, and video tokenizers
@@ -21,6 +21,7 @@ KVAE provides pretrained variational autoencoders for converting audio, images a
 | --- | --- | --- | --- |
 | Audio | `KVAEAudio` | [KVAE-Audio](https://huggingface.co/kandinskylab/KVAE-Audio) | [`inference_1d_kvae.py`](scripts/inference_1d_kvae.py) |
 | Image | `KVAEImage` | [KVAE-2D-1.0](https://huggingface.co/kandinskylab/KVAE-2D-1.0) | [`inference_2d_kvae.py`](scripts/inference_2d_kvae.py) |
+| Image | `KVAEImage` | [KVAE-2D-2.0](https://huggingface.co/kandinskylab/KVAE-2D-2.0) | [`inference_2d_kvae.py`](scripts/inference_2d_kvae.py) |
 | Video | `KVAEVideo` | [KVAE-3D-1.0](https://huggingface.co/kandinskylab/KVAE-3D-1.0) | [`inference_3d_kvae.py`](scripts/inference_3d_kvae.py) |
 | Video | `KVAEVideo` | [KVAE-3D-2.0-t4s8](https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s8) | [`inference_3d_kvae.py`](scripts/inference_3d_kvae.py) |
 | Video | `KVAEVideo` | [KVAE-3D-2.0-t4s16](https://huggingface.co/kandinskylab/KVAE-3D-2.0-t4s16) | [`inference_3d_kvae.py`](scripts/inference_3d_kvae.py) |
@@ -28,6 +29,8 @@ KVAE provides pretrained variational autoencoders for converting audio, images a
 ## Highlights
 
 **KVAE-Audio** is a continuous full-band 48 kHz tokenizer with 166.9M parameters and 64 latent channels. Under a fixed text-to-audio generator, it achieves the best CLAP, CE, PQ, and all reported FAD scores on AudioCaps among the compared autoencoders. On MUSDB18-HQ reconstruction, it leads all reported MEL, STFT, waveform, SI-SDR, SDR, and SNR metrics.
+
+**KVAE-Image 2.0** is the image tokenizer from KVAE 2.0, a family of image and video tokenizers designed to provide latent representations for diffusion models. It compresses RGB images by 8 x 8 into continuous 32-channel latents and reconstructs them with high fidelity.
 
 **KVAE-Video 2.0** is available with temporal compression 4 and spatial compression 8 x 8 or 16 x 16. The t4s8 model keeps 16 latent channels, while the t4s16 variant provides a more compact representation for higher spatial compression.
 
@@ -102,7 +105,7 @@ The released audio model expects mono 48 kHz input and runs in `float32`. Loadin
 ```bash
 python -m scripts.inference_2d_kvae \
     --dataset_folder ./assets/image_test \
-    --model KVAE_1.0 \
+    --model KVAE_2.0 \
     --saving_folder ./outputs/images
 ```
 
@@ -129,30 +132,18 @@ A runnable example for all three modalities is available in [scripts/inference_e
 ## Citation
 
 ```bibtex
-@misc{kvae_audio_2026,
-    author = {Ivan Kirillov, Denis Parkhomenko, Alexander Ivanov,
-              Azat Saginbaev, Egor Silvestrov, Denis Dimitrov},
-    title = {KVAE-Audio: a full-band continuous audio tokenizer for generative models},
-    howpublished = {\url{https://github.com/kandinskylab/kvae}},
-    year = {2026}
-}
-
-@misc{kvae_2_2026,
-    author = {Andrey Shutkin, Denis Parkhomenko, Kirill Chernyshev,
-              Ivan Kirillov, Denis Dimitrov,
-              Valeriya Kobenko, Kirill Malakhov},
-    title = {KVAE 2.0: video tokenizers for Image & Video generation models},
-    howpublished = {\url{https://github.com/kandinskylab/kvae}},
-    year = {2026}
-}
-
-@misc{kvae_1_2025,
-    author = {Kirill Chernyshev, Andrey Shutkin, Ilia Vasiliev,
-              Denis Parkhomenko, Ivan Kirillov,
-              Dmitrii Mikhailov, Denis Dimitrov},
-    title = {KVAE 1.0: image and video tokenizers for Image & Video generation models},
-    howpublished = {\url{https://github.com/kandinskylab/kvae}},
-    year = {2025}
+@misc{kvae2026,
+  title         = {KVAE: Family of Tokenizers for Multimodal Generative Models},
+  author        = {Andrey Shutkin, Denis Parkhomenko, Ivan Kirillov,
+                   Kirill Chernyshev, Kirill Malakhov, Ilia Vasiliev,
+                   Ilia Trushkin, Valeriya Kobenko, David Chikovani,
+                   Alexander Ivanov, Azat Saginbaev, Egor Silvestrov,
+                   Ivan Mikheev, Konstantin Zakharov},
+  year          = {2026},
+  eprint        = {2608.05798},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV},
+  url           = {https://arxiv.org/abs/2608.05798}
 }
 ```
 

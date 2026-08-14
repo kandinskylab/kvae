@@ -118,8 +118,8 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--model",
-        choices=["KVAE_1.0"],
-        default="KVAE_1.0",
+        choices=["KVAE_1.0", "KVAE_2.0"],
+        default="KVAE_2.0",
         help="Model path for inference",
     )
     parser.add_argument(
@@ -138,6 +138,7 @@ if __name__ == "__main__":
 
     model_paths = {
         "KVAE_1.0": "kandinskylab/KVAE-2D-1.0",
+        "KVAE_2.0": "kandinskylab/KVAE-2D-2.0",
     }
 
     vae = KVAEImage.from_pretrained(model_paths[cli_args.model]).eval().to(device).to(dtype)
