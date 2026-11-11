@@ -105,7 +105,7 @@ signal = read_audio(input_path).to(device)
 audio = signal.audio_data.float()
 
 with torch.no_grad():
-    posterior = model.encode(audio, signal.sample_rate).latent_dist
+    posterior = model.encode(audio).latent_dist
     latent = posterior.mode()
     reconstruction = model.decode(latent)[..., : audio.shape[-1]]
 
