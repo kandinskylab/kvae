@@ -62,7 +62,7 @@ def run_audio_inference(
             raise ValueError("All audio files in a batch must use one sample rate")
         sample_rate = int(sample_rates[0])
 
-        posterior = vae.encode(audio, sample_rate).latent_dist
+        posterior = vae.encode(audio).latent_dist
         latent = posterior.sample() if sample_posterior else posterior.mode()
         reconstructions = vae.decode(latent)[..., : audio.shape[-1]]
 

@@ -1,5 +1,4 @@
 import math
-from collections import OrderedDict
 from typing import List, Optional, Union
 
 import numpy as np
@@ -9,8 +8,7 @@ from diffusers.models.modeling_outputs import AutoencoderKLOutput
 from huggingface_hub import PyTorchModelHubMixin
 from torch import nn
 
-from ..layers import Snake1d, WNConv1d, WNConvTranspose1d, ResnetBlock1D
-
+from ..layers import ResnetBlock1D, Snake1d, WNConv1d, WNConvTranspose1d
 
 # =====================================================
 # =================== 1D KVAE Model ===================
@@ -28,21 +26,19 @@ class KVAEAudio(
         self,
         encoder_dim: int = 64,
         encoder_rates: List[int] = [2, 3, 4, 5, 8],
-        latent_dim: int = None,
+        latent_dim: int = 2048,
         codebook_dim: Union[int, list] = 64,
         decoder_dim: int = 1536,
         decoder_rates: List[int] = [8, 5, 4, 3, 2],
         sample_rate: int = 48000,
         num_channels: int = 1,
-        use_attn: bool = False,
         **kwargs,
     ):
         super().__init__()
 
         self.sample_rate = sample_rate
-
-        if latent_dim is None:
-            latent_dim = encoder_dim * (2 ** len(encoder_rates))
+        self.num_channels = num_channels
+        self.latent_dim = latent_dim
 
         if codebook_dim is None:
             codebook_dim = latent_dim
@@ -67,33 +63,19 @@ class KVAEAudio(
             d_out=num_channels,
         )
 
-        self.use_attn = use_attn
-        if self.use_attn:
-            self.attn = nn.MultiheadAttention(latent_dim, 8, batch_first=True)
+        self.attn = nn.MultiheadAttention(latent_dim, 8, batch_first=True)
 
-    def _preprocess(self, audio_data, sample_rate):
-        if sample_rate is None:
-            sample_rate = self.sample_rate
-        assert sample_rate == self.sample_rate
-
+    def _pad_to_hop_length(self, audio_data: torch.Tensor) -> torch.Tensor:
         length = audio_data.shape[-1]
         right_pad = math.ceil(length / self.hop_length) * self.hop_length - length
-        audio_data = nn.functional.pad(audio_data, (0, right_pad))
+        return nn.functional.pad(audio_data, (0, right_pad))
 
-        return audio_data
-
-    def encode(
-        self,
-        audio_data: torch.Tensor,
-        sample_rate: int = None,
-    ) -> AutoencoderKLOutput:
-        audio_data = self._preprocess(audio_data, sample_rate)
+    def encode(self, audio_data: torch.Tensor) -> AutoencoderKLOutput:
+        audio_data = self._pad_to_hop_length(audio_data)
         q = self.encoder(audio_data)
-
-        if self.use_attn:
-            q = q.transpose(1, 2)
-            q, _ = self.attn(q, q, q)
-            q = q.transpose(1, 2)
+        q = q.transpose(1, 2)
+        q, _ = self.attn(q, q, q)
+        q = q.transpose(1, 2)
 
         moments = self.in_proj(q)
         posterior = DiagonalGaussianDistribution(moments)
@@ -108,13 +90,12 @@ class KVAEAudio(
     def forward(
         self,
         audio_data: torch.Tensor,
-        sample_rate: int = None,
         sample: bool = False,
         generator: Optional[torch.Generator] = None,
     ):
         length = audio_data.shape[-1]
 
-        posterior = self.encode(audio_data, sample_rate).latent_dist
+        posterior = self.encode(audio_data).latent_dist
         if sample:
             z = posterior.sample(generator=generator)
         else:
@@ -134,6 +115,27 @@ class KVAEAudio(
 # ==================================================
 
 
+class EncoderBlock1D(nn.Module):
+    def __init__(self, input_dim: int, output_dim: int, stride: int):
+        super().__init__()
+        self.block = nn.Sequential(
+            ResnetBlock1D(input_dim, dilation=1),
+            ResnetBlock1D(input_dim, dilation=3),
+            ResnetBlock1D(input_dim, dilation=9),
+            Snake1d(input_dim),
+            WNConv1d(
+                input_dim,
+                output_dim,
+                kernel_size=2 * stride,
+                stride=stride,
+                padding=math.ceil(stride / 2),
+            ),
+        )
+
+    def forward(self, x):
+        return self.block(x)
+
+
 class Encoder1D(nn.Module):
     def __init__(
         self,
@@ -148,21 +150,7 @@ class Encoder1D(nn.Module):
         for stride in strides:
             input_dim = d_model
             d_model *= 2
-            block = nn.Sequential(
-                ResnetBlock1D(input_dim, dilation=1),
-                ResnetBlock1D(input_dim, dilation=3),
-                ResnetBlock1D(input_dim, dilation=9),
-                Snake1d(input_dim),
-                WNConv1d(
-                    input_dim,
-                    d_model,
-                    kernel_size=2 * stride,
-                    stride=stride,
-                    padding=math.ceil(stride / 2),
-                ),
-            )
-            # Preserve the legacy model.<level>.block.<layer> state_dict paths
-            layers.append(nn.Sequential(OrderedDict([("block", block)])))
+            layers.append(EncoderBlock1D(input_dim, d_model, stride))
 
         layers += [
             Snake1d(d_model),
@@ -181,6 +169,29 @@ class Encoder1D(nn.Module):
 # ==================================================
 
 
+class DecoderBlock1D(nn.Module):
+    def __init__(self, input_dim: int, output_dim: int, stride: int):
+        super().__init__()
+        self.block = nn.Sequential(
+            Snake1d(input_dim),
+            # odd strides need output_padding=1 to invert the encoder's downsampling exactly, or decode() silently truncates
+            WNConvTranspose1d(
+                input_dim,
+                output_dim,
+                kernel_size=2 * stride,
+                stride=stride,
+                padding=math.ceil(stride / 2),
+                output_padding=stride % 2,
+            ),
+            ResnetBlock1D(output_dim, dilation=1),
+            ResnetBlock1D(output_dim, dilation=3),
+            ResnetBlock1D(output_dim, dilation=9),
+        )
+
+    def forward(self, x):
+        return self.block(x)
+
+
 class Decoder1D(nn.Module):
     def __init__(
         self,
@@ -195,23 +206,7 @@ class Decoder1D(nn.Module):
         for i, stride in enumerate(strides):
             input_dim = d_model // 2**i
             output_dim = d_model // 2 ** (i + 1)
-            block = nn.Sequential(
-                Snake1d(input_dim),
-                # odd strides need output_padding=1 to invert the encoder's downsampling exactly, or decode() silently truncates
-                WNConvTranspose1d(
-                    input_dim,
-                    output_dim,
-                    kernel_size=2 * stride,
-                    stride=stride,
-                    padding=math.ceil(stride / 2),
-                    output_padding=stride % 2
-                ),
-                ResnetBlock1D(output_dim, dilation=1),
-                ResnetBlock1D(output_dim, dilation=3),
-                ResnetBlock1D(output_dim, dilation=9),
-            )
-            # Preserve the legacy model.<level>.block.<layer> state_dict paths.
-            layers.append(nn.Sequential(OrderedDict([("block", block)])))
+            layers.append(DecoderBlock1D(input_dim, output_dim, stride))
 
         layers += [
             Snake1d(output_dim),
