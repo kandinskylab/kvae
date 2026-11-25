@@ -17,7 +17,7 @@ from metrics.video_metrics import VideoPSNR, VideoSSIM, VideoLPIPS
 
 from kvae.models import KVAEVideo
 
-from data.video_dataset import VideoDataset
+from data.video_dataset import TruncVideo, VideoDataset
 
 from data.saving_reconstruction_utils import (
     save_results_as_png_async,
@@ -35,6 +35,7 @@ def run_video_inference(
     input_norm: Literal["-11", "m11", "01"] = "m11",
     seg_len: Literal[4, 8, 16] = 16,
     dtype: torch.dtype = torch.bfloat16,
+    use_latent_norm: Optional[bool] = None,
 ):
     """
     function performs inference using a variational autoencoder on videos, computes
@@ -43,7 +44,9 @@ def run_video_inference(
     Parameters
     ----------
     vae: 
-        Variational Autoencoder (VAE) model (nn.Module) for inference process
+        VAE model (nn.Module) for inference
+        Optional data_config supplies spatial_compression and temporal_compression;
+        models without these values retain the legacy 16 and 8 factors.
     device: 
         device on which the computations will be performed, such as CPU or GPU. 
         it is of type `torch.device`
@@ -61,12 +64,22 @@ def run_video_inference(
         length of the sequence processed per iteration
     dtype:
         floating-point dtype used for model inputs
+    use_latent_norm:
+        optional override of the model's latent normalization setting
     """
     
     # # for usual video
     # dataset = VideoDataset(data_dir, regex="*", input_norm=input_norm)
     # for video, which is folder of .png frames
-    dataset = VideoDataset(data_dir, regex="*", stream_pattern="*.png", input_norm=input_norm)
+    data_config = getattr(vae, "data_config", {})
+    transform = TruncVideo(
+        data_config.get("spatial_compression", 16),
+        data_config.get("temporal_compression", 8),
+    )
+    dataset = VideoDataset(
+        data_dir, regex="*", stream_pattern="*.png", input_norm=input_norm,
+        transform=transform,
+    )
     # # for yuv video (we must specify shape, because this is raw format)
     # dataset = VideoDataset(
     #     data_dir, regex="*", input_norm=input_norm, shape=(1280, 720)
@@ -95,8 +108,12 @@ def run_video_inference(
     with torch.no_grad():
         for batch_idx, data in enumerate(tqdm(dataloader, desc="Processing")):
             videos = data["frames"].to(dtype=dtype, device=device)
-            latent = vae.encode(videos, seg_len=seg_len).latent_dist.mode()
-            reconstructions = vae.decode(latent, seg_len=seg_len).clip(-1, 1)
+            latent = vae.encode(
+                videos, seg_len=seg_len, use_latent_norm=use_latent_norm
+            ).latent_dist.mode()
+            reconstructions = vae.decode(
+                latent, seg_len=seg_len, use_latent_norm=use_latent_norm
+            ).clip(-1, 1)
 
             # Saving reconstructions
             if saving_folder:
@@ -160,9 +177,9 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--model",
-        choices=["KVAE_1.0", "KVAE_2.0-t4s8", "KVAE_2.0-t4s16"],
+        choices=["KVAE_1.0", "KVAE_2.0-t4s8", "KVAE_2.0-t4s16", "KVAE_3.0"],
         default="KVAE_1.0",
-        help="Model path for inference",
+        help="Model alias for inference",
     )
     parser.add_argument(
         "--input_norm",
@@ -171,6 +188,13 @@ if __name__ == "__main__":
         help="Normalizing for input data",
     )
 
+    parser.add_argument(
+        "--latent_norm",
+        action="store_true",
+        dest="use_latent_norm",
+        default=None,
+        help="Enable latent normalization; by default use the model config",
+    )
     parser.add_argument(
         "--seg_len",
         type=int,
@@ -196,10 +220,12 @@ if __name__ == "__main__":
         "KVAE_1.0": "kandinskylab/KVAE-3D-1.0",
         "KVAE_2.0-t4s8": "kandinskylab/KVAE-3D-2.0-t4s8",
         "KVAE_2.0-t4s16": "kandinskylab/KVAE-3D-2.0-t4s16",
+        "KVAE_3.0": "kandinskylab/KVAE-Video-3.0"
     }
 
     vae = (
-        KVAEVideo.from_pretrained(model_paths[cli_args.model]).eval().to(device).to(dtype)
+        KVAEVideo.from_pretrained(model_paths[cli_args.model], strict=True)
+        .eval().to(device).to(dtype)
     )
 
     psnr, lpips = run_video_inference(
@@ -210,4 +236,5 @@ if __name__ == "__main__":
         input_norm=cli_args.input_norm,
         seg_len=cli_args.seg_len,
         dtype=dtype,
+        use_latent_norm=cli_args.use_latent_norm,
     )
