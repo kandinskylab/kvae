@@ -36,6 +36,14 @@ class ResnetBlock1D(nn.Module):
 # =================== 2D Modules ===================
 # ==================================================
 
+def _apply_norm_2d(norm: nn.Module, h: torch.Tensor, zq: Optional[torch.Tensor]) -> torch.Tensor:
+    if getattr(norm, "requires_zq", False):
+        if zq is None:
+            raise ValueError(f"{type(norm).__name__} requires zq")
+        return norm(h, zq=zq)
+    return norm(h)
+
+
 class ResnetBlock2D(nn.Module):
     def __init__(
         self,
@@ -44,7 +52,8 @@ class ResnetBlock2D(nn.Module):
         out_channels: Optional[int] = None,
         zq_ch: Optional[int] = None,
         normalization: nn.Module = nn.GroupNorm,
-        act_fn: str = "swish"
+        act_fn: str = "swish",
+        norm_factory: Optional[Callable[[int], nn.Module]] = None,
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -52,7 +61,9 @@ class ResnetBlock2D(nn.Module):
         self.out_channels = out_channels
         self.nonlinearity = get_activation(act_fn)
 
-        if zq_ch is None:
+        if norm_factory is not None:
+            self.norm1 = norm_factory(in_channels)
+        elif zq_ch is None:
             self.norm1 = normalization(num_channels=in_channels, num_groups=32, eps=1e-6, affine=True)
         else:
             self.norm1 = normalization(in_channels, zq_ch=zq_ch)
@@ -64,7 +75,9 @@ class ResnetBlock2D(nn.Module):
             padding=(1, 1),
             padding_mode="replicate",
         )
-        if zq_ch is None:
+        if norm_factory is not None:
+            self.norm2 = norm_factory(out_channels)
+        elif zq_ch is None:
             self.norm2 = normalization(num_channels=out_channels, num_groups=32, eps=1e-6, affine=True)
         else:
             self.norm2 = normalization(out_channels, zq_ch=zq_ch)
@@ -85,14 +98,22 @@ class ResnetBlock2D(nn.Module):
                 padding=0,
             )
 
+    @property
+    def requires_zq(self) -> bool:
+        """Whether either normalization needs the conditioning latent."""
+        return any(
+            getattr(norm, "requires_zq", False)
+            for norm in (self.norm1, self.norm2)
+        )
+
     def forward(self, x: torch.Tensor, zq: Optional[torch.Tensor] = None) -> torch.Tensor:
         h = x
 
-        h = self.norm1(h, zq) if zq is not None else self.norm1(h)
+        h = _apply_norm_2d(self.norm1, h, zq)
         h = self.nonlinearity(h)
         h = self.conv1(h)
 
-        h = self.norm2(h, zq) if zq is not None else self.norm2(h)
+        h = _apply_norm_2d(self.norm2, h, zq)
         h = self.nonlinearity(h)
         h = self.conv2(h)
 

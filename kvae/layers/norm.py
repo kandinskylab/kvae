@@ -12,6 +12,8 @@ from .conv import SafeConv3d
 # ==================================================
 
 class DecoderSpatialNorm2D(nn.Module):
+    requires_zq = True
+
     def __init__(
         self,
         in_channels: int,
@@ -41,6 +43,23 @@ class DecoderSpatialNorm2D(nn.Module):
         norm_f = self.norm_layer(f)
         new_f = norm_f * self.conv_y(zq) + self.conv_b(zq)
         return new_f
+
+
+def get_normalization_2d(
+    in_channels: int,
+    norm_name: Literal["group_norm", "decoder_spatial_norm"] = "group_norm",
+    zq_ch: Optional[int] = None,
+) -> nn.Module:
+    """Create a 2D normalization; spatial normalization requires latent channels."""
+    if norm_name == "group_norm":
+        return nn.GroupNorm(
+            num_channels=in_channels, num_groups=32, eps=1e-6, affine=True
+        )
+    if norm_name == "decoder_spatial_norm":
+        if zq_ch is None:
+            raise ValueError("decoder_spatial_norm requires conditioning channels")
+        return DecoderSpatialNorm2D(in_channels, zq_ch)
+    raise ValueError(f"Unsupported 2D normalization: {norm_name}")
 
 
 # ==================================================
