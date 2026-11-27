@@ -8,7 +8,7 @@
 
   <a href="https://kandinskylab.ai/open-source-kvae-3-en.html">Project page</a> | <a href="https://arxiv.org/abs/2608.05798">Previous technical report (KVAE 2.0)</a>
 
-  Hugging Face collections: <a href="https://huggingface.co/collections/kandinskylab/kvae-30">KVAE 3.0</a> | <a href="https://huggingface.co/collections/kandinskylab/kvae-20-69e095d0531ff090c314914c">KVAE 2.0</a> | <a href="https://huggingface.co/collections/kandinskylab/kvae-10-691d98d9c643e5b99ca99ede">KVAE 1.0</a> | <a href="https://huggingface.co/collections/kandinskylab/kvae-audio-6a42481e7e0cbee9811b5a62">Audio</a>
+  Hugging Face collections: <a href="https://huggingface.co/blog/kandinskylab/kvae-3">KVAE 3.0</a> | <a href="https://huggingface.co/collections/kandinskylab/kvae-20-69e095d0531ff090c314914c">KVAE 2.0</a> | <a href="https://huggingface.co/collections/kandinskylab/kvae-10-691d98d9c643e5b99ca99ede">KVAE 1.0</a> | <a href="https://huggingface.co/collections/kandinskylab/kvae-audio-6a42481e7e0cbee9811b5a62">Audio</a>
 
 </div>
 
