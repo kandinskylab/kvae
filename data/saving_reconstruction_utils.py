@@ -167,8 +167,8 @@ def save_audio(
     """Save an audio reconstruction using the loudness and normalization processing.
 
     Before writing, the reconstruction loudness is matched to the loudness of
-    the input audio. Loudness calculation and normalization are performed on
-    the current tensor device. The result is moved to CPU only before writing.
+    the input audio. Loudness is measured on CPU for every channel count, because
+    the GPU meter returns the wrong shape for stereo. The result is written from CPU.
 
     Parameters
     ----------
@@ -197,9 +197,9 @@ def save_audio(
         filename = f"{filename}.wav"
     file_path = save_dir_path / filename
 
-    reference_signal = AudioSignal(reference_tensor, sample_rate)
-    reconstruction = AudioSignal(tensor, sample_rate)
+    reference_signal = AudioSignal(reference_tensor.detach().cpu(), sample_rate)
+    reconstruction = AudioSignal(tensor.detach().cpu(), sample_rate)
     reconstruction = reconstruction.normalize(reference_signal.loudness())
-    reconstruction.cpu().write(file_path)
+    reconstruction.write(file_path)
 
     return file_path

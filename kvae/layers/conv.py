@@ -131,6 +131,10 @@ class CachedCausalConv3d(nn.Module):
         )
         input_parallel = F.pad(input_, padding_3d, mode="constant" if self.padding_mode == 'zeros' else (self.padding_mode or 'replicate'))
 
+        # # Framewise convolutions do not require a temporal cache.
+        if self.time_kernel_size == 1 and t_stride == 1:
+            return self.conv(input_parallel)
+
         if self.cache is None:
             first_frame = input_parallel[:, :, :1]
             time_pad_shape = [i for i in first_frame.shape]
@@ -145,12 +149,10 @@ class CachedCausalConv3d(nn.Module):
             out_size[2] = (input_.size(2) + 1) // 2
         output = torch.empty(tuple(out_size), dtype=input_.dtype, device=input_.device)
 
-        offset_out = math.ceil(
-            padding.size(2) / t_stride
-        )  # forward on `padding_poisoned` should take exactly this range
-        offset_in = offset_out * t_stride - padding.size(
-            2
-        )  # to make forward on `input_parallel` take slice starting with this index
+        # Number of output frames that depend on temporal padding.
+        offset_out = math.ceil(padding.size(2) / t_stride)
+        # Input index for the remaining outputs, aligned to the temporal stride.
+        offset_in = offset_out * t_stride - padding.size(2)
 
         if offset_out > 0:
             padding_poisoned = torch.cat(

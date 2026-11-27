@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Tuple, Optional
 
 import torch
@@ -7,9 +8,10 @@ from diffusers.models.modeling_outputs import AutoencoderKLOutput
 from huggingface_hub import PyTorchModelHubMixin
 
 from diffusers.models.activations import get_activation
+from ..layers.mid import MidBlock2D
 from ..layers.resnet import ResnetBlock2D
 from ..layers.sampling import PXSDownsample, PXSUpsample
-from ..layers.norm import DecoderSpatialNorm2D
+from ..layers.norm import DecoderSpatialNorm2D, get_normalization_2d
 
 
 # =====================================================
@@ -33,6 +35,11 @@ class KVAEImage(
         z_channels: int = 16,
         double_z: bool = True,
         ch_mult: Tuple[int, ...] = (1, 2, 4, 8),
+        use_attention: bool = False,
+        num_mid_res_blocks: int = 2,
+        encoder_mid_norm: str = "group_norm",
+        decoder_mid_norm: str = "decoder_spatial_norm",
+        act_fn: str = "swish",
     ):
         super().__init__()
         self.encoder = Encoder2D(
@@ -42,6 +49,10 @@ class KVAEImage(
             num_res_blocks=num_enc_blocks,
             z_channels=z_channels,
             double_z=double_z,
+            use_attention=use_attention,
+            num_mid_res_blocks=num_mid_res_blocks,
+            mid_norm=encoder_mid_norm,
+            act_fn=act_fn,
         )
         self.decoder = Decoder2D(
             out_ch=in_channels,
@@ -50,6 +61,10 @@ class KVAEImage(
             num_res_blocks=num_dec_blocks,
             in_channels=None,
             z_channels=z_channels,
+            use_attention=use_attention,
+            num_mid_res_blocks=num_mid_res_blocks,
+            mid_norm=decoder_mid_norm,
+            act_fn=act_fn,
         )
 
     def encode(self, x: torch.Tensor) -> AutoencoderKLOutput:
@@ -101,6 +116,9 @@ class Encoder2D(nn.Module):
         z_channels: int = 16,
         double_z: bool = True,
         act_fn: str = "swish",
+        use_attention: bool = False,
+        num_mid_res_blocks: int = 2,
+        mid_norm: str = "group_norm",
     ):
         super().__init__()
         self.ch = ch
@@ -133,6 +151,7 @@ class Encoder2D(nn.Module):
                     ResnetBlock2D(
                         in_channels=block_in,
                         out_channels=block_out,
+                        act_fn=act_fn,
                     )
                 )
                 block_in = block_out
@@ -143,15 +162,12 @@ class Encoder2D(nn.Module):
             self.down.append(down)
 
         # middle
-        self.mid = nn.Module()
-        self.mid.block_1 = ResnetBlock2D(
-            in_channels=block_in,
-            out_channels=block_in,
-        )
-
-        self.mid.block_2 = ResnetBlock2D(
-            in_channels=block_in,
-            out_channels=block_in,
+        self.mid = MidBlock2D(
+            block_in,
+            num_res_blocks=num_mid_res_blocks,
+            use_attention=use_attention,
+            norm_factory=partial(get_normalization_2d, norm_name=mid_norm),
+            act_fn=act_fn,
         )
 
         # end
@@ -174,8 +190,7 @@ class Encoder2D(nn.Module):
             if i_level != self.num_resolutions - 1:
                 h = self.down[i_level].downsample(h)
 
-        h = self.mid.block_1(h)
-        h = self.mid.block_2(h)
+        h = self.mid(h)
 
         h = self.norm_out(h)
         h = self.nonlinearity(h)
@@ -201,6 +216,9 @@ class Decoder2D(nn.Module):
         z_channels: int = 16,
         zq_ch: Optional[int] = None,
         act_fn: str = "swish",
+        use_attention: bool = False,
+        num_mid_res_blocks: int = 2,
+        mid_norm: str = "decoder_spatial_norm",
     ):
         super().__init__()
         self.ch = ch
@@ -223,19 +241,12 @@ class Decoder2D(nn.Module):
         )
 
         # middle
-        self.mid = nn.Module()
-        self.mid.block_1 = ResnetBlock2D(
-            in_channels=block_in,
-            out_channels=block_in,
-            zq_ch=zq_ch,
-            normalization=DecoderSpatialNorm2D,
-        )
-
-        self.mid.block_2 = ResnetBlock2D(
-            in_channels=block_in,
-            out_channels=block_in,
-            zq_ch=zq_ch,
-            normalization=DecoderSpatialNorm2D,
+        self.mid = MidBlock2D(
+            block_in,
+            num_res_blocks=num_mid_res_blocks,
+            use_attention=use_attention,
+            norm_factory=partial(get_normalization_2d, norm_name=mid_norm, zq_ch=zq_ch),
+            act_fn=act_fn,
         )
 
         # upsampling
@@ -250,6 +261,7 @@ class Decoder2D(nn.Module):
                         out_channels=block_out,
                         zq_ch=zq_ch,
                         normalization=DecoderSpatialNorm2D,
+                        act_fn=act_fn,
                     )
                 )
                 block_in = block_out
@@ -273,8 +285,7 @@ class Decoder2D(nn.Module):
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         h = self.conv_in(z)
 
-        h = self.mid.block_1(h, z)
-        h = self.mid.block_2(h, z)
+        h = self.mid(h, zq=z)
 
         for i_level in reversed(range(self.num_resolutions)):
             for i_block in range(self.num_res_blocks + 1):
