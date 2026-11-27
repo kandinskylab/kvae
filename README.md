@@ -36,6 +36,8 @@ The latest models are selected by default in the inference scripts and notebook.
 
 **KVAE-Audio-Stereo** encodes stereo audio at 48 kHz into 128-channel continuous latents at 50 Hz.
 
+<img src="assets/sbs_kvae_audio_stereo.png" />
+
 **KVAE-2D-3.0** compresses image height and width by a factor of 8 into 32 latent channels. It adds self-attention in the encoder and decoder bottlenecks and uses semantic feature alignment during training.
 
 **KVAE-3D-3.0** compresses video spatially by 32 × 32 and temporally by 4 into 128 latent channels. Its causal, fully convolutional architecture supports temporal chunking and per-channel latent normalization.
