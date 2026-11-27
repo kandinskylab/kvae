@@ -13,11 +13,11 @@ Generative quality is established under a **fixed generator** — same DiT archi
 
 ### Evaluation of latent space qualities for generation
 
-<img src="../sbs_same_l.png" />
+<img src="../sbs_kvae_audio_vs_same_l.png" />
 
-<img src="../sbs_moviegen.png" />
+<img src="../sbs_kvae_audio_vs_moviegen.png" />
 
-<img src="../sbs_mmaudio.png" />
+<img src="../sbs_kvae_audio_vs_mmaudio.png" />
 
 ### Audio Generation Examples
 

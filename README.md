@@ -45,7 +45,7 @@ The latest models are selected by default in the inference scripts and notebook.
 
 ### KVAE-Audio latent-space qualities for generation
 
-<img src="assets/sbs_same_l.png" />
+<img src="assets/sbs_kvae_audio_vs_same_l.png" />
 
 ### KVAE-Video 2.0 reconstruction
 
