@@ -37,17 +37,16 @@ Use `python -m ... --help` to inspect every current option.
 python -m scripts.inference_1d_kvae \
     --device 0 \
     --dataset_folder ./assets/audio_test \
-    --model KVAE-Audio \
     --bs 1 \
-    --saving_folder ./outputs/audio
+    --saving_folder ./outputs/audio \
+    --model KVAE-Audio-Stereo  # or KVAE-Audio
 ```
 
 `--dataset_folder` may point to one audio file or a directory, which is searched recursively. Use `--sample_posterior` to sample the latent distribution; without it, inference uses the deterministic posterior mode.
 
-The released checkpoint expects mono audio at 48 kHz. `read_audio` and `AudioDataset` intentionally preserve the source sample rate, channel count, length, and amplitude. They do not resample, downmix, crop, pad, or normalizeinput files. Variable-length files require `--bs 1` unless a custom collate
-function is introduced.
+[KVAE-Audio](https://huggingface.co/kandinskylab/KVAE-Audio) is the mono checkpoint and has 64 latent channels. [KVAE-Audio-Stereo](https://huggingface.co/kandinskylab/KVAE-Audio-Stereo) is the stereo checkpoint and has 128 latent channels. Both expect 48 kHz audio. A stereo file stays left/right through the stereo model. Through the mono model, each channel is reconstructed on its own and written back as stereo. A mono file passed to KVAE-Audio-Stereo is duplicated into the model and averaged back to one channel on write. `read_audio` and `AudioDataset` preserve the source sample rate, channel count, length, and amplitude. They do not resample, downmix, crop, pad, or normalize input files. Variable-length files require `--bs 1` unless a custom collate function is introduced.
 
-Metrics are calculated on the raw decoder reconstruction. Before a WAV is written, `save_audio` matches its loudness to the input signal on the current device and only then transfers it to CPU.
+Metrics are waveform L1, multi-scale STFT, mel, MFCC, SI-SDR, and CCPC, calculated on the raw decoder reconstruction. Before a WAV is written, `save_audio` matches its loudness to the input signal on CPU.
 
 ### Image CLI
 
@@ -95,7 +94,7 @@ from kvae import KVAEAudio
 
 device = torch.device("cuda:0")
 model = (
-    KVAEAudio.from_pretrained("kandinskylab/KVAE-Audio")
+    KVAEAudio.from_pretrained("kandinskylab/KVAE-Audio-Stereo")  # or kandinskylab/KVAE-Audio
     .eval()
     .to(device=device, dtype=torch.float32)
 )

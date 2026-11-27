@@ -3,21 +3,21 @@
 Detailed evaluation results for KVAE audio, image, and video tokenizers. The
 project overview and quick start are available in [README.md](../../README.md).
 
-**Sections:** [Audio](#kvae-audio) · [Image](#kvae-2d-10) · [Video](#kvae-video-20)
+**Sections:** [Audio](#kvae-audio) · [Audio Stereo](#kvae-audio-stereo) · [Image](#kvae-2d-10) · [Video](#kvae-video-20)
 
 ## KVAE-Audio
 
-KVAE-Audio is a continuous full-band 48 kHz audio tokenizer evaluated both as a reconstruction model and as the latent space of a fixed text-to-audio generator.
+[KVAE-Audio](https://huggingface.co/kandinskylab/KVAE-Audio) is the mono full-band 48 kHz audio tokenizer, with 64 latent channels, evaluated both as a reconstruction model and as the latent space of a fixed text-to-audio generator. The stereo release is [KVAE-Audio-Stereo](https://huggingface.co/kandinskylab/KVAE-Audio-Stereo), with 128 latent channels. The tables in this section report the mono [KVAE-Audio](https://huggingface.co/kandinskylab/KVAE-Audio) model.
 
 Generative quality is established under a **fixed generator** — same DiT architecture, training data, and number of steps — varying only the autoencoder. We report objective generation metrics and blind human side-by-side below.
 
 ### Evaluation of latent space qualities for generation
 
-<img src="../sbs_same_l.png" />
+<img src="../sbs_kvae_audio_vs_same_l.png" />
 
-<img src="../sbs_moviegen.png" />
+<img src="../sbs_kvae_audio_vs_moviegen.png" />
 
-<img src="../sbs_mmaudio.png" />
+<img src="../sbs_kvae_audio_vs_mmaudio.png" />
 
 ### Audio Generation Examples
 
@@ -215,6 +215,106 @@ Reconstruction is evaluated on open datasets across domains (the released weight
 | DACVAE MovieGen | 107.7M   | 128        | **0,453** | **1,310** | *0,006*   | **10,264** | **10,680** | **10,681** | *4,246*   |
 | SAME-L          | 852.1M   | 256        | 0,774     | 1,575     | 0,007     | 9,939      | 10,374     | 10,376     | 2,982     |
 | KVAE-Audio      | 166.9M   | 64         | *0,463*   | *1,314*   | **0,006** | *9,952*    | *10,377*   | *10,384*   | **4,266** |
+
+## KVAE-Audio-Stereo
+
+[KVAE-Audio-Stereo](https://huggingface.co/kandinskylab/KVAE-Audio-Stereo) is the stereo full-band 48 kHz waveform tokenizer, with 128 latent channels, a 50 Hz latent rate, and 167M parameters. Left and right are encoded jointly. Generative quality uses one fixed generator on every latent: an open-source 0.6B diffusion transformer adapted for audio, trained from scratch for 60,000 steps on one internal general-audio dataset. The generation baselines are [SAME-L](https://arxiv.org/abs/2605.18613) (44.1 kHz, 256 latent channels, about 10.8 Hz, 852M), the autoencoder of Stable Audio 3, and the LTX 2.5 audio VAE (48 kHz, 128 latent channels, 25 Hz, 182M).
+
+Listening tests use a fixed pool of 148 prompts spanning sounds, speech, and music. Listeners judge prompt following and audio quality separately and may mark both outputs as good or both as bad. Win rates give half credit for both good and exclude both bad. Against SAME-L, KVAE-Audio-Stereo wins 55/68/64% of the prompt-following comparisons and 71/98/93% of the audio-quality comparisons. Against the LTX 2.5 audio VAE it wins 74/60/67% and 82/78/94%. On audio quality it wins more than 70% of the comparisons against both models in every category.
+
+<img src="../sbs_kvae_audio_stereo.png" />
+
+### Evaluation of latent space qualities for generation
+
+CLAP in these tables is LAION CLAP.
+
+#### AudioCaps test set
+
+| Model             | # Params | Latent dim | CLAP↑    | CE↑      | PQ↑      | FD (OPEN-L3)↓ | FAD (VGG)↓ |
+| ----------------- | -------- | ---------- | -------- | -------- | -------- | ------------- | ---------- |
+| SAME-L            | 852M     | 256        | 0,25     | 3,60     | 5,84     | 232,87        | 6,02       |
+| LTX 2.5           | 182M     | 128        | *0,27*   | *4,04*   | *6,36*   | *227,02*      | *5,13*     |
+| KVAE-Audio-Stereo | 167M     | 128        | **0,29** | **4,33** | **6,52** | **218,34**    | **4,27**   |
+
+#### Song Describer
+
+| Model             | # Params | Latent dim | CLAP↑    | CE↑      | PQ↑      | FD (OPEN-L3)↓ | FAD (VGG)↓ |
+| ----------------- | -------- | ---------- | -------- | -------- | -------- | ------------- | ---------- |
+| SAME-L            | 852M     | 256        | **0,30** | 7,41     | 7,77     | 127,87        | *2,11*     |
+| LTX 2.5           | 182M     | 128        | *0,29*   | *7,56*   | *8,10*   | *117,61*      | **2,04**   |
+| KVAE-Audio-Stereo | 167M     | 128        | 0,26     | **7,57** | **8,14** | **114,36**    | 2,20       |
+
+#### Seed-TTS Eval
+
+| Model             | # Params | Latent dim | CLAP↑    | CE↑      | PQ↑      | FD (OPEN-L3)↓ | FAD (VGG)↓ | WER (%)↓  |
+| ----------------- | -------- | ---------- | -------- | -------- | -------- | ------------- | ---------- | --------- |
+| SAME-L            | 852M     | 256        | **0,17** | 4,20     | 4,80     | 145,90        | 7,19       | 58,97     |
+| LTX 2.5           | 182M     | 128        | *0,15*   | *5,42*   | *6,32*   | **119,39**    | *5,80*     | *29,62*   |
+| KVAE-Audio-Stereo | 167M     | 128        | **0,17** | **5,93** | **7,25** | *123,29*      | **4,51**   | **25,93** |
+
+Objective scores agree with the listening tests on AudioCaps and Seed-TTS Eval. On Song Describer, SAME-L and LTX 2.5 score higher on CLAP and FAD (VGG).
+
+### Reconstructions
+
+Reconstruction uses a test set of music, speech, and sound effects from open datasets, kept only when the file is stereo at its true sample rate and disjoint from training, about 13 hours in total. The metrics are multi-scale mel (MEL) and STFT distances, MFCC distance, waveform L1, SI-SDR, SNR, PESQ on speech, and cross-channel phase coherence (CCPC). CCPC is the energy-weighted phasor coherence between the inter-channel phase differences of the reference and the reconstruction, averaged over four STFT resolutions. Results are grouped by the sample rate at which the metrics are computed. Within a group, the reference and every reconstruction are downsampled to that rate. LTX 2.5 analyzes a 16 kHz mel representation and is evaluated on its 48 kHz vocoder output, so its scores describe that full analysis, VAE, and vocoder pipeline.
+
+| Model             | Sample rate | Channels | Latent rate | Latent dim | # Params | Representation |
+| ----------------- | ----------- | -------- | ----------- | ---------- | -------- | -------------- |
+| SAME-L            | 44.1 kHz    | 2        | ~10.8 Hz    | 256        | 852M     | waveform       |
+| LTX 2.5 audio VAE | 48 kHz      | 2        | 25 Hz       | 128        | 182M     | mel + vocoder  |
+| KVAE-Audio-Stereo | 48 kHz      | 2        | 50 Hz       | 128        | 167M     | waveform       |
+
+**44.1 kHz**
+
+| Dataset | Model             | MEL↓     | STFT↓    | MFCC↓    | Waveform↓  | SI-SDR↑   | SNR↑      | PESQ↑    | CCPC↑      |
+| ------- | ----------------- | -------- | -------- | -------- | ---------- | --------- | --------- | -------- | ---------- |
+| Sounds  | SAME-L            | *0,96*   | *2,36*   | *0,22*   | **0,0449** | *2,66*    | **4,80**  | –        | *0,8436*   |
+| Sounds  | KVAE-Audio-Stereo | **0,68** | **2,31** | **0,16** | *0,0475*   | **2,73**  | *4,75*    | –        | **0,8575** |
+| Music   | SAME-L            | *0,88*   | **2,64** | **0,24** | *0,0380*   | *9,72*    | *10,19*   | –        | *0,9563*   |
+| Music   | KVAE-Audio-Stereo | **0,71** | *2,80*   | *0,25*   | **0,0313** | **11,57** | **11,81** | –        | **0,9765** |
+| Speech  | SAME-L            | *0,81*   | *1,85*   | *0,17*   | *0,0076*   | *9,49*    | *9,97*    | *2,43*   | *0,9981*   |
+| Speech  | KVAE-Audio-Stereo | **0,34** | **1,23** | **0,06** | **0,0054** | **11,78** | **12,07** | **4,47** | **0,9987** |
+
+**48 kHz**
+
+| Dataset | Model             | MEL↓     | STFT↓    | MFCC↓    | Waveform↓  | SI-SDR↑   | SNR↑      | PESQ↑    | CCPC↑      |
+| ------- | ----------------- | -------- | -------- | -------- | ---------- | --------- | --------- | -------- | ---------- |
+| Sounds  | LTX 2.5           | *1,40*   | *4,37*   | *0,39*   | *0,0888*   | *-48,30*  | *-2,42*   | –        | *0,7311*   |
+| Sounds  | KVAE-Audio-Stereo | **0,68** | **2,33** | **0,16** | **0,0475** | **2,74**  | **4,75**  | –        | **0,8576** |
+| Music   | LTX 2.5           | *1,32*   | *4,05*   | *0,36*   | *0,1700*   | *-46,24*  | *-2,85*   | –        | *0,7771*   |
+| Music   | KVAE-Audio-Stereo | **0,69** | **2,67** | **0,23** | **0,0311** | **11,65** | **11,86** | –        | **0,9765** |
+| Speech  | LTX 2.5           | *1,18*   | *3,39*   | *0,30*   | *0,0318*   | *-36,51*  | *-2,94*   | *3,00*   | *0,9881*   |
+| Speech  | KVAE-Audio-Stereo | **0,36** | **1,42** | **0,07** | **0,0054** | **11,78** | **12,07** | **4,47** | **0,9987** |
+
+#### Open sets
+
+Song Describer, LibriSpeech, and AudioCaps. εar-VAE is the 44.1 kHz model with 141M parameters and 128 latent channels. LibriSpeech is reported without CCPC.
+
+**44.1 kHz**
+
+| Dataset        | Model             | MEL↓       | STFT↓      | MFCC↓      | Waveform↓  | SI-SDR↑    | SNR↑       | PESQ↑     | CCPC↑      |
+| -------------- | ----------------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | --------- | ---------- |
+| Song Describer | SAME-L            | 1,3729     | 4,8432     | 0,4132     | 0,1133     | -16,737    | 4,777      | –         | 0,8486     |
+| Song Describer | εar-VAE           | *1,0172*   | *3,3991*   | *0,3253*   | *0,0401*   | *11,382*   | *11,708*   | –         | *0,9701*   |
+| Song Describer | KVAE-Audio-Stereo | **0,7953** | **3,3646** | **0,3171** | **0,0346** | **13,097** | **13,264** | –         | **0,9805** |
+| LibriSpeech    | SAME-L            | 1,2538     | 5,2836     | 0,4487     | 0,0067     | *13,758*   | *13,889*   | 2,914     | –          |
+| LibriSpeech    | εar-VAE           | *0,8368*   | *3,8835*   | *0,3038*   | *0,0065*   | 13,511     | 13,747     | *3,360*   | –          |
+| LibriSpeech    | KVAE-Audio-Stereo | **0,3237** | **3,1338** | **0,1848** | **0,0044** | **16,396** | **16,492** | **4,460** | –          |
+| AudioCaps      | SAME-L            | 1,0521     | 2,8198     | 0,2888     | 0,0275     | *7,285*    | *8,285*    | –         | 0,9685     |
+| AudioCaps      | εar-VAE           | *0,7638*   | *1,8738*   | *0,1484*   | *0,0269*   | 6,974      | 8,129      | –         | *0,9697*   |
+| AudioCaps      | KVAE-Audio-Stereo | **0,5276** | **1,8246** | **0,1064** | **0,0238** | **10,123** | **9,777**  | –         | **0,9771** |
+
+**48 kHz**
+
+| Dataset        | Model             | MEL↓       | STFT↓      | MFCC↓      | Waveform↓  | SI-SDR↑    | SNR↑       | PESQ↑     | CCPC↑      |
+| -------------- | ----------------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | --------- | ---------- |
+| Song Describer | LTX 2.5           | *1,2841*   | *4,0267*   | *0,3419*   | *0,1999*   | *-42,790*  | *-2,773*   | –         | *0,7741*   |
+| Song Describer | KVAE-Audio-Stereo | **0,7802** | **3,2060** | **0,2973** | **0,0346** | **13,098** | **13,265** | –         | **0,9806** |
+| LibriSpeech    | LTX 2.5           | *2,0286*   | *6,2693*   | *0,5784*   | *0,0477*   | *-31,975*  | *-3,124*   | *3,712*   | –          |
+| LibriSpeech    | KVAE-Audio-Stereo | **0,3162** | **3,4890** | **0,1840** | **0,0044** | **16,395** | **16,492** | **4,460** | –          |
+| AudioCaps      | LTX 2.5           | *1,1980*   | *3,3200*   | *0,2795*   | *0,0932*   | *-45,388*  | *-2,839*   | –         | *0,9356*   |
+| AudioCaps      | KVAE-Audio-Stereo | **0,5327** | **1,9408** | **0,1138** | **0,0238** | **10,122** | **9,777**  | –         | **0,9772** |
+
 
 ## KVAE-Image 1.0
 

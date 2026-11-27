@@ -9,6 +9,7 @@ __all__ = [
     "SISDRDistance",
     "MultiScaleSTFTDistance",
     "MelSpectrogramDistance",
+    "MultiScaleMFCCDistance",
 ]
 
 
@@ -242,4 +243,99 @@ class MelSpectrogramDistance(nn.Module):
                 estimate_mels,
             )
 
+        return distance
+
+
+class MultiScaleMFCCDistance(nn.Module):
+    """Multi-scale MFCC distance used by the reconstruction evaluation.
+
+    Each scale is an L1 distance. The distance is divided by the mean absolute
+    value of the estimate, then the scales are averaged.
+    """
+
+    def __init__(
+        self,
+        n_mfcc: Sequence[int] = (13, 20, 40),
+        window_lengths: Sequence[int] = (512, 1024, 2048),
+        n_mels: Sequence[int] = (40, 80, 128),
+        distance_fn: Optional[Callable] = None,
+        clamp_eps: float = 1e-5,
+        mag_weight: float = 1.0,
+        log_weight: float = 0.0,
+        pow: float = 1.0,
+        mel_fmin: Optional[Sequence[float]] = None,
+        mel_fmax: Optional[Sequence[Optional[float]]] = None,
+        normalize: bool = True,
+        normalize_eps: float = 1e-7,
+        log_offset: float = 1e-6,
+        match_stride: bool = False,
+        window_type: Optional[str] = None,
+    ):
+        super().__init__()
+        if mel_fmin is None:
+            mel_fmin = (0.0,) * len(window_lengths)
+        if mel_fmax is None:
+            mel_fmax = (None,) * len(window_lengths)
+        self.stft_params = [
+            STFTParams(
+                window_length=window,
+                hop_length=window // 4,
+                match_stride=match_stride,
+                window_type=window_type,
+            )
+            for window in window_lengths
+        ]
+        self.n_mfcc = tuple(n_mfcc)
+        self.n_mels = tuple(n_mels)
+        self.mel_fmin = tuple(mel_fmin)
+        self.mel_fmax = tuple(mel_fmax)
+        self.distance_fn = nn.L1Loss() if distance_fn is None else distance_fn
+        self.clamp_eps = clamp_eps
+        self.mag_weight = mag_weight
+        self.log_weight = log_weight
+        self.pow = pow
+        self.normalize = normalize
+        self.normalize_eps = normalize_eps
+        self.log_offset = log_offset
+
+    def forward(self, reference: AudioSignal, estimate: AudioSignal) -> torch.Tensor:
+        distance = 0.0
+        for n_mfcc, n_mels, fmin, fmax, params in zip(
+            self.n_mfcc, self.n_mels, self.mel_fmin, self.mel_fmax, self.stft_params
+        ):
+            kwargs = {
+                "window_length": params.window_length,
+                "hop_length": params.hop_length,
+                "window_type": params.window_type,
+            }
+            reference_mfcc = reference.clone().mfcc(
+                n_mfcc,
+                n_mels,
+                log_offset=self.log_offset,
+                mel_fmin=fmin,
+                mel_fmax=fmax,
+                **kwargs,
+            )
+            estimate_mfcc = estimate.clone().mfcc(
+                n_mfcc,
+                n_mels,
+                log_offset=self.log_offset,
+                mel_fmin=fmin,
+                mel_fmax=fmax,
+                **kwargs,
+            )
+            if self.log_weight > 0:
+                distance = distance + self.log_weight * self.distance_fn(
+                    reference_mfcc.abs().clamp(self.clamp_eps).pow(self.pow).log10(),
+                    estimate_mfcc.abs().clamp(self.clamp_eps).pow(self.pow).log10(),
+                )
+            if self.mag_weight > 0:
+                mag_distance = self.mag_weight * self.distance_fn(reference_mfcc, estimate_mfcc)
+                if self.normalize:
+                    mag_distance = mag_distance / estimate_mfcc.abs().mean().clamp_min(
+                        self.normalize_eps
+                    )
+                distance = distance + mag_distance
+        if self.normalize and len(self.stft_params) > 0:
+            distance = distance / len(self.stft_params)
         return distance
