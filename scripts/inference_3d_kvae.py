@@ -178,7 +178,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model",
         choices=["KVAE_1.0", "KVAE_2.0-t4s8", "KVAE_2.0-t4s16", "KVAE_3.0"],
-        default="KVAE_1.0",
+        default="KVAE_3.0",
         help="Model alias for inference",
     )
     parser.add_argument(
@@ -220,7 +220,7 @@ if __name__ == "__main__":
         "KVAE_1.0": "kandinskylab/KVAE-3D-1.0",
         "KVAE_2.0-t4s8": "kandinskylab/KVAE-3D-2.0-t4s8",
         "KVAE_2.0-t4s16": "kandinskylab/KVAE-3D-2.0-t4s16",
-        "KVAE_3.0": "kandinskylab/KVAE-3D-3.0"
+        "KVAE_3.0": "kandinskylab/KVAE-3D-3.0",
     }
 
     vae = (

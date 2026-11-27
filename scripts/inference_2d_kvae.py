@@ -119,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model",
         choices=["KVAE_1.0", "KVAE_2.0", "KVAE_3.0"],
-        default="KVAE_2.0",
+        default="KVAE_3.0",
         help="Model path for inference",
     )
     parser.add_argument(
