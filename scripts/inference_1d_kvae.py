@@ -12,10 +12,12 @@ from data import AudioDataset, save_audio
 from kvae.models import KVAEAudio
 from metrics.audio_metrics import (
     MelSpectrogramDistance,
+    MultiScaleMFCCDistance,
     MultiScaleSTFTDistance,
     SISDRDistance,
     WaveformL1Distance,
 )
+from metrics.ccpc import compute_ccpc
 from scripts.common_utils import set_seed_and_optimal_cuda_env
 
 MODEL_PATHS = {
@@ -70,9 +72,11 @@ def run_audio_inference(
         "waveform_l1": WaveformL1Distance().to(device),
         "stft": MultiScaleSTFTDistance().to(device),
         "mel": MelSpectrogramDistance().to(device),
+        "mfcc": MultiScaleMFCCDistance().to(device),
         "sisdr": SISDRDistance().to(device),
     }
     values = {name: [] for name in distances}
+    values["ccpc"] = []
 
     print(f"Starting inference on {len(dataset)} audio files...")
 
@@ -126,8 +130,14 @@ def run_audio_inference(
             values["mel"].append(
                 distances["mel"](reference_signal, reconstruction_signal).detach().cpu()
             )
+            values["mfcc"].append(
+                distances["mfcc"](reference_signal, reconstruction_signal).detach().cpu()
+            )
             values["sisdr"].append(
                 -distances["sisdr"](reference_signal, reconstruction_signal).detach().cpu()
+            )
+            values["ccpc"].append(
+                compute_ccpc(reference, reconstruction).mean().detach().cpu()
             )
 
             if saving_folder is not None:
@@ -150,7 +160,9 @@ def run_audio_inference(
     print(f"Waveform L1: {results['waveform_l1']:.8f}")
     print(f"STFT dist  : {results['stft']:.8f}")
     print(f"Mel dist   : {results['mel']:.8f}")
+    print(f"MFCC dist  : {results['mfcc']:.8f}")
     print(f"SI-SDR (dB): {results['sisdr']:.4f}")
+    print(f"CCPC       : {results['ccpc']:.4f}")
     print("=" * 40)
 
     return results

@@ -1,5 +1,6 @@
 from .audio_metrics import (
     MelSpectrogramDistance,
+    MultiScaleMFCCDistance,
     MultiScaleSTFTDistance,
     SISDRDistance,
     WaveformL1Distance,
